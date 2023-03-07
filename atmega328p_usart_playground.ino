@@ -9,23 +9,23 @@
 #include "my_usart.h"
 
 
-#define TEST_STRING_1 "wait for it\n\n"
-#define TEST_STRING_2 "almost there\n\n"
-#define TEST_STRING_3 "EOF\nwe're done\n"
+#define MY_USART_WRITE_CONST(str) my_usart_write(str, (sizeof str) - 1)
+#define MY_USART_WRITE_CONST_F(str) \
+my_usart_write_from_pgm(PSTR(str), (sizeof str) - 1)
 
 int main()
 {
   my_timer_init();
   my_usart_init(9600);
-  my_usart_write(TEST_STRING_1, (sizeof TEST_STRING_1) - 1);
-  for (uint8_t i = 0; i < 60; i++)
+  MY_USART_WRITE_CONST_F("wait for it\n\n");
+  for (uint8_t i = 0; i < 10; i++)
   {
     my_timer_set_delay(1000);
     my_timer_wait();
   }
   my_timer_set_delay(2000);
-  my_usart_write(TEST_STRING_2, (sizeof TEST_STRING_2) - 1);
+  MY_USART_WRITE_CONST_F("almost there\n\n");
   my_timer_wait();
-  my_usart_write(TEST_STRING_3, (sizeof TEST_STRING_3) - 1);
+  MY_USART_WRITE_CONST_F("EOF\nwe're done\n");
   my_usart_flush();
 }
