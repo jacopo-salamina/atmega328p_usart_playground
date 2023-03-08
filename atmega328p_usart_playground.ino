@@ -20,12 +20,10 @@ int main()
   MY_USART_WRITE_CONST_F("wait for it\n\n");
   for (uint8_t i = 0; i < 10; i++)
   {
-    my_timer_set_delay(1000);
-    my_timer_wait();
+    my_timer_wait(1000);
   }
-  my_timer_set_delay(2000);
   MY_USART_WRITE_CONST_F("almost there\n\n");
-  my_timer_wait();
+  my_timer_wait(2000);
   MY_USART_WRITE_CONST_F("EOF\nwe're done\n");
   my_usart_flush();
 }

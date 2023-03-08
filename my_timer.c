@@ -24,7 +24,7 @@ void my_timer_init()
   OCR1A = 0;
 }
 
-void my_timer_set_delay(uint16_t delay_in_ms)
+void my_timer_wait(uint16_t delay_in_ms)
 {
   /*
    * The timer's internal counter wraps back to 0 approximately every 4194.3 ms.
@@ -59,14 +59,10 @@ void my_timer_set_delay(uint16_t delay_in_ms)
    * know when the output compare match occurred.
    */
   bitSet(TIFR1, OCF1A);
-}
-
-/**
- * Polls the flag OCF1A on TIFR1, until the flag becomes 1, which means that
- * the output compare match with OCR1A occurred, and thus the delay specified in
- * my_timer_set_delay() is over.
- */
-void my_timer_wait()
-{
+  /**
+   * Poll the flag OCF1A on TIFR1, until the flag becomes 1, which means that
+   * the output compare match with OCR1A occurred, and thus the delay specified
+   * in my_timer_set_delay() is over.
+   */
   while (!(TIFR1 & bit(OCF1A)));
 }
