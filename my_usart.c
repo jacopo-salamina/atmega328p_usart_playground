@@ -11,8 +11,8 @@
  */
 static struct
 {
-  volatile uint8_t head, size;
   volatile char data[RING_BUFFER_MAX_SIZE];
+  volatile uint8_t head, size;
 }
 _ring_buffer =
 {
