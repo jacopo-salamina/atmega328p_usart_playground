@@ -48,11 +48,12 @@ void my_timer_set_delay(uint16_t delay_in_ms)
    */
   uint16_t delay_in_timer_clock_cycles = delay_in_ms * F_CPU / 1024 / 1000;
   /*
-   * Add that number of clocks to OCR1A. We don't care about a potential
-   * overflow, as the counter would overflow as well and reach OCR1A after
-   * exactly delay_in_timer_clock_cycles cycles.
+   * Compute the future value of TCNT1 after delay_ms milliseconds, and store
+   * it into OCR1A (in order to trigger the output compare match). We don't care
+   * about a potential overflow, as the counter would overflow as well and reach
+   * OCR1A after exactly delay_in_timer_clock_cycles cycles.
    */
-  OCR1A += delay_in_timer_clock_cycles;
+  OCR1A = TCNT1 + delay_in_timer_clock_cycles;
   /*
    * Clear OCF1A on TIFR1, as we're going to poll that flag later in order to
    * know when the output compare match occurred.
