@@ -6,6 +6,7 @@
 #include "my_task.h"
 
 
+static bool _timeout_pending = false;
 static void (* _timeout_func)(void*) = NULL;
 static void* _timeout_args = NULL;
 
@@ -16,11 +17,7 @@ ISR(TIMER1_COMPA_vect)
   {
     my_task__queue_new(_timeout_func, _timeout_args);
   }
-  /*
-   * Disable the output compare match interrupt, in order to avoid triggering
-   * it over and over again.
-   */
-  bitClear(TIMSK1, OCIE1A);
+  _timeout_pending = false;
 }
 
 void my_timer__init()
@@ -91,19 +88,10 @@ void my_timer__set_timeout(
    * soon as the output compare match occurs).
    */
   bitSet(TIMSK1, OCIE1A);
-  /*
-   * Clear OCF1A on TIFR1, as we're going to poll that flag later in order to
-   * know when the output compare match occurred.
-   */
-  bitSet(TIFR1, OCF1A);
+  _timeout_pending = true;
 }
 
-/**
- * Check the flag OCF1A on TIFR1; if it is 0, then the output compare match with
- * OCR1A did not occur yet, and thus the timeout specified in
- * my_timer__set_timeout() is still pending.
- */
 bool my_timer__is_timeout_pending()
 {
-  return !(TIFR1 & bit(OCF1A));
+  return _timeout_pending;
 }
