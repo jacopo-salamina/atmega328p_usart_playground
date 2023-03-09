@@ -5,20 +5,39 @@
 #include <util/atomic.h>
 
 
-static bool _timeout_pending = false;
-static task_t _timeout_task =
+/**
+ * Task which will be queued after a specific timeout.
+ * 
+ * func is also used as a "flag": if it's set to NULL, that means no task was
+ * scheduled (no function can have NULL as address), and thus no timeout is
+ * pending.
+ * 
+ * Keep in mind that, since the output compare match interrupt is enabled, the
+ * flag OCF1A on TIFR1 no longer serves this purpose, as it's automatically
+ * cleared when running the associated ISR. Thus, we need to manually track the
+ * status of the timeout.
+ */
+static task_t _scheduled_task =
 {
   .func = NULL
 };
 
 ISR(TIMER1_COMPA_vect)
 {
-  // If there's a pending task, queue it.
-  if (_timeout_task.func != NULL)
-  {
-    my_task__queue_new(_timeout_task);
-  }
-  _timeout_pending = false;
+  /*
+   * Queue the scheduled task.
+   * 
+   * Keep in mind that we're running inside an ISR, and by default nested ISRs
+   * are not allowed, which means we don't need an atomic block for reading
+   * _scheduled_task.
+   */
+  my_task__queue_new(_scheduled_task);
+  _scheduled_task.func = NULL;
+  /*
+   * Disable the output compare match interrupt; otherwise, this ISR would run
+   * twice, without a valid task to queue.
+   */
+  bitClear(TIMSK1, OCIE1A);
 }
 
 void my_timer__init()
@@ -55,15 +74,26 @@ void my_timer__set_timeout(uint16_t delay_in_ms, task_t task)
   {
     exit(1);
   }
+  // If the supplied task is not valid, just quit.
+  else if (task.func == NULL)
+  {
+    exit(1);
+  }
   /*
-   * Save task, so we can later queue a new task as soon as the output compare
-   * match occurs.
+   * If we already scheduled a task, just quit.
+   * Otherwise, save the new task, so we can later queue it as soon as the
+   * output compare match occurs.
+   * 
    * Since structs cannot be atomically saved or loaded, we have to do this
    * inside an atomic block.
    */
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
   {
-    _timeout_task = task;
+    if (_scheduled_task.func != NULL)
+    {
+      exit(1);
+    }
+    _scheduled_task = task;
   }
   /*
    * Convert the delay into an equivalent number of timer clocks.
@@ -86,10 +116,18 @@ void my_timer__set_timeout(uint16_t delay_in_ms, task_t task)
    * soon as the output compare match occurs).
    */
   bitSet(TIMSK1, OCIE1A);
-  _timeout_pending = true;
 }
 
 bool my_timer__is_timeout_pending()
 {
-  return _timeout_pending;
+  bool pending;
+  /*
+   * Since memory addresses are 16 bit wide, reading them atomically is not
+   * possible; thus, we need an atomic block.
+   */
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+  {
+    pending = _scheduled_task.func != NULL;
+  }
+  return pending;
 }

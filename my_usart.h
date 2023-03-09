@@ -5,6 +5,7 @@
 #include <avr/pgmspace.h>
 
 
+// These macros are provided in order to handle string literals more easily.
 #define MY_USART__WRITE_CONST(str) my_usart__write(str, (sizeof str) - 1)
 #define MY_USART__WRITE_CONST_F(str) \
 my_usart__write_from_pgm(PSTR(str), (sizeof str) - 1)
@@ -13,12 +14,26 @@ my_usart__write_from_pgm(PSTR(str), (sizeof str) - 1)
 extern "C"
 {
 #endif
+/**
+ * Initialize the USART module with a specific baud rate.
+ */
 void my_usart__init(uint16_t);
 
-void my_usart__write(const char*, uint8_t);
+/**
+ * Reads a string from SRAM and writes it in a non-blocking fashion (store its
+ * contents inside an internal buffer).
+ */
+void my_usart__write_from_sram(const char*, uint8_t);
 
+/**
+ * Same as my_usart__write_from_sram, but the string is read from the program
+ * memory.
+ */
 void my_usart__write_from_pgm(PGM_P, uint8_t);
 
+/**
+ * Checks whether there's an ongoing transmission.
+ */
 bool my_usart__is_transmission_active();
 #ifdef __cplusplus
 }

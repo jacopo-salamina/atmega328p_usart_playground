@@ -6,6 +6,9 @@
 
 #define RING_BUFFER_MAX_SIZE 16
 
+/**
+ * Ring buffer used for storing pending tasks.
+ */
 static struct
 {
   volatile task_t data[RING_BUFFER_MAX_SIZE];
@@ -19,7 +22,7 @@ _ring_buffer =
 
 void my_task__queue_new(task_t task)
 {
-  // If no function was provided, just quit.
+  // If no function was provided, the task is invalid; just quit.
   if (task.func == NULL)
   {
     exit(1);
@@ -44,7 +47,8 @@ void my_task__queue_new(task_t task)
      * cannot exceed 15 (RING_BUFFER_MAX_SIZE - 1), so ring_buffer_new_tail
      * cannot exceed 31 (2 * RING_BUFFER_MAX_SIZE - 1).
      */
-    uint8_t ring_buffer_new_tail = ring_buffer_head + ring_buffer_previous_size + 1;
+    uint8_t ring_buffer_new_tail =
+      ring_buffer_head + ring_buffer_previous_size + 1;
     /*
      * If ring_buffer_new_tail exceeds the ring buffer's max size, adjust its
      * value accordingly.
@@ -79,6 +83,7 @@ task_t my_task__try_to_read_next()
   {
     .func = NULL
   };
+  // Keep in mind, this method is expected to run within an outer atomic block.
   uint8_t ring_buffer_previous_size = _ring_buffer.size;
   /*
    * If the buffer is empty, there's no new task to run, and task.func stays

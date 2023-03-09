@@ -7,7 +7,7 @@
  */
 
 #include <util/atomic.h>
-#include "my_task_queue_1.h"
+#include "async_method_1.h"
 #include "my_task.h"
 #include "my_timer.h"
 #include "my_usart.h"
@@ -15,13 +15,25 @@
 
 int main()
 {
-  bitSet(DDRB, DDB5);
-  bitSet(PORTB, PORTB5);
   my_timer__init();
   my_usart__init(9600);
-  my_task_queue_1__queue queue = my_task_queue_1__create();
-  my_task_queue_1__start(&queue);
+  async_method_1__method method = async_method_1__create();
+  async_method_1__start(&method);
   bool loop_running;
+  /*
+   * Keep checking whether any of the following conditions hold true:
+   * - there's a new task we can immediately run;
+   * - there's a task scheduled to be run in the future;
+   * - the USART module is still transmitting.
+   * If all these conditions are false, that means there's nothing left to do
+   * anymore: just quit.
+   * 
+   * Since this global state may be altered anytime by an ISR, we need to
+   * inspect all the conditions inside the same atomic block.
+   * 
+   * Additionally, if a new task was found, execute it outside of the
+   * aforementioned atomic block, in order not to block any ISR.
+   */
   do
   {
     task_t next_task_found;
@@ -39,5 +51,4 @@ int main()
     }
   }
   while (loop_running);
-  bitClear(PORTB, PORTB5);
 }

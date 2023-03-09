@@ -82,9 +82,6 @@ static uint8_t _my_usart__write_common_check_size_and_compute_tail(uint8_t size)
   {
     exit(1);
   }
-
-  // ACTUAL BUFFER WRITES
-
   /*
    * We need to compute the ring buffer's tail now, once again according to the
    * buffer's state we read in the atomic block above.
@@ -96,13 +93,14 @@ static uint8_t _my_usart__write_common_check_size_and_compute_tail(uint8_t size)
    * 
    * It follows that the buffer's state we read above is sufficient for
    * computing its tail.
-   * 
+   */
+  uint16_t ring_buffer_tail_not_wrapped = ring_buffer_head + ring_buffer_size;
+  /*
    * We also need to keep in mind that the buffer's available data may wrap
    * around the internal array's end, and thus the tail may be behind the head.
    * This means that computing (head + size) is not enough, we also need to wrap
    * that value around the buffer's maximum size.
    */
-  uint16_t ring_buffer_tail_not_wrapped = ring_buffer_head + ring_buffer_size;
   return
     ring_buffer_tail_not_wrapped < RING_BUFFER_MAX_SIZE
     ? ring_buffer_tail_not_wrapped
@@ -139,6 +137,9 @@ ISR(USART_UDRE_vect)
   /*
    * Read the ring buffer's byte pointed to by its head, and copy it to the
    * USART module's buffer.
+   * 
+   * Keep in mind that we're running inside an ISR, and by default nested ISRs
+   * are not allowed, which means we don't need an atomic block.
    */
   uint8_t ring_buffer_previous_head = _ring_buffer.head;
   UDR0 = _ring_buffer.data[ring_buffer_previous_head];
@@ -202,8 +203,6 @@ void my_usart__init(uint16_t baud_rate)
 
 void my_usart__write(const char* data, uint8_t size)
 {
-  // SANITY CHECKS
-
   // Edge case where there's no data to write; we don't need to do anything.
   if (size == 0)
   {
@@ -234,8 +233,6 @@ void my_usart__write(const char* data, uint8_t size)
 
 void my_usart__write_from_pgm(PGM_P data, uint8_t size)
 {
-  // SANITY CHECKS
-
   // Edge case where there's no data to write; we don't need to do anything.
   if (size == 0)
   {
@@ -267,6 +264,12 @@ void my_usart__write_from_pgm(PGM_P data, uint8_t size)
 /**
  * Checks the flag TXC0 on UCSR0A; if it is 0, then the USART module still has
  * some data to transmit.
+ * 
+ * Keep in mind that the transmission complete interrupt is disabled; otherwise,
+ * this flag would be set to 1 only if both conditions held true:
+ * - interrupts were temporarily disabled (e.g. inside an atomic block);
+ * - the transmission is completed;
+ * which means that inspecting the flag would be useless.
  */
 bool my_usart__is_transmission_active()
 {
