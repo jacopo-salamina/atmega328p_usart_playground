@@ -38,7 +38,7 @@ my_task_queue_1__queue my_task_queue_1__create()
   {
     .data =
     {
-      .seconds_left_to_wait_during_task_1 = 5
+      .seconds_left_to_wait_during_task_1 = 10
     }
   };
 }

@@ -65,7 +65,7 @@ void my_task__queue_new(task_t task)
   }
 }
 
-bool my_task__try_to_run_next()
+task_t my_task__try_to_read_next()
 {
   /*
    * Reserve some space for a copy of the next task.
@@ -79,61 +79,48 @@ bool my_task__try_to_run_next()
   {
     .func = NULL
   };
+  uint8_t ring_buffer_previous_size = _ring_buffer.size;
   /*
-   * Since the ring buffer may be updated anytime, accessing it and removing its
-   * head must be done inside an atomic block.
+   * If the buffer is empty, there's no new task to run, and task.func stays
+   * NULL. Otherwise, read and remove its head.
    */
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+  if (ring_buffer_previous_size > 0)
   {
-    uint8_t ring_buffer_previous_size = _ring_buffer.size;
+    uint8_t ring_buffer_previous_head = _ring_buffer.head;
     /*
-     * If the buffer is empty, there's no new task to run, and task.func stays
-     * NULL. Otherwise, read and remove its head.
+     * Once again, this computation will never cause an overflow: both head
+     * and size cannot exceed 15 (RING_BUFFER_MAX_SIZE - 1), so
+     * ring_buffer_new_tail cannot exceed 30 (2 * RING_BUFFER_MAX_SIZE - 2).
      */
-    if (ring_buffer_previous_size > 0)
+    uint8_t ring_buffer_tail =
+      ring_buffer_previous_head + ring_buffer_previous_size;
+    /*
+     * If ring_buffer_tail exceeds the ring buffer's max size, adjust its
+     * value accordingly.
+     * 
+     * Note that subtracting RING_BUFFER_MAX_SIZE once is enough to adjust
+     * ring_buffer_tail: its initial maximum value was 30
+     * (2 * RING_BUFFER_MAX_SIZE - 2), thus subtracting RING_BUFFER_MAX_SIZE
+     * would lead to a maximum value of 14 (RING_BUFFER_MAX_SIZE - 1).
+     */
+    if (ring_buffer_tail >= RING_BUFFER_MAX_SIZE)
     {
-      uint8_t ring_buffer_previous_head = _ring_buffer.head;
-      /*
-       * Once again, this computation will never cause an overflow: both head
-       * and size cannot exceed 15 (RING_BUFFER_MAX_SIZE - 1), so
-       * ring_buffer_new_tail cannot exceed 30 (2 * RING_BUFFER_MAX_SIZE - 2).
-       */
-      uint8_t ring_buffer_tail =
-        ring_buffer_previous_head + ring_buffer_previous_size;
-      /*
-       * If ring_buffer_tail exceeds the ring buffer's max size, adjust its
-       * value accordingly.
-       * 
-       * Note that subtracting RING_BUFFER_MAX_SIZE once is enough to adjust
-       * ring_buffer_tail: its initial maximum value was 30
-       * (2 * RING_BUFFER_MAX_SIZE - 2), thus subtracting RING_BUFFER_MAX_SIZE
-       * would lead to a maximum value of 14 (RING_BUFFER_MAX_SIZE - 1).
-       */
-      if (ring_buffer_tail >= RING_BUFFER_MAX_SIZE)
-      {
-        ring_buffer_tail -= RING_BUFFER_MAX_SIZE;
-      }
-      task = _ring_buffer.data[ring_buffer_tail];
-      // Compute the new value for _ring_buffer.head .
-      uint8_t ring_buffer_new_head = ring_buffer_previous_head + 1;
-      /*
-       * If ring_buffer_new_head exceeds the ring buffer's max size, adjust its
-       * value accordingly.
-       */
-      if (ring_buffer_new_head >= RING_BUFFER_MAX_SIZE)
-      {
-        ring_buffer_new_head -= RING_BUFFER_MAX_SIZE;
-      }
-      // Update both head and size of the ring buffer.
-      _ring_buffer.head = ring_buffer_new_head;
-      _ring_buffer.size = ring_buffer_previous_size - 1;
+      ring_buffer_tail -= RING_BUFFER_MAX_SIZE;
     }
+    task = _ring_buffer.data[ring_buffer_tail];
+    // Compute the new value for _ring_buffer.head .
+    uint8_t ring_buffer_new_head = ring_buffer_previous_head + 1;
+    /*
+     * If ring_buffer_new_head exceeds the ring buffer's max size, adjust its
+     * value accordingly.
+     */
+    if (ring_buffer_new_head >= RING_BUFFER_MAX_SIZE)
+    {
+      ring_buffer_new_head -= RING_BUFFER_MAX_SIZE;
+    }
+    // Update both head and size of the ring buffer.
+    _ring_buffer.head = ring_buffer_new_head;
+    _ring_buffer.size = ring_buffer_previous_size - 1;
   }
-  // If task.func is not NULL, we did find a new task: run it.
-  bool next_task_found = task.func != NULL;
-  if (next_task_found)
-  {
-    task.func(task.args);
-  }
-  return next_task_found;
+  return task;
 }
