@@ -8,13 +8,13 @@
 extern "C"
 {
 #endif
-void my_usart_init(uint16_t);
+void my_usart__init(uint16_t);
 
-void my_usart_write(const char*, uint8_t);
+void my_usart__write(const char*, uint8_t);
 
-void my_usart_write_from_pgm(PGM_P, uint8_t);
+void my_usart__write_from_pgm(PGM_P, uint8_t);
 
-void my_usart_flush();
+void my_usart__flush();
 #ifdef __cplusplus
 }
 #endif

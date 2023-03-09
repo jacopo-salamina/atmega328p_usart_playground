@@ -9,21 +9,21 @@
 #include "my_usart.h"
 
 
-#define MY_USART_WRITE_CONST(str) my_usart_write(str, (sizeof str) - 1)
-#define MY_USART_WRITE_CONST_F(str) \
-my_usart_write_from_pgm(PSTR(str), (sizeof str) - 1)
+#define MY_USART__WRITE_CONST(str) my_usart__write(str, (sizeof str) - 1)
+#define MY_USART__WRITE_CONST_F(str) \
+my_usart__write_from_pgm(PSTR(str), (sizeof str) - 1)
 
 int main()
 {
-  my_timer_init();
-  my_usart_init(9600);
-  MY_USART_WRITE_CONST_F("wait for it\n\n");
+  my_timer__init();
+  my_usart__init(9600);
+  MY_USART__WRITE_CONST_F("wait for it\n\n");
   for (uint8_t i = 0; i < 10; i++)
   {
-    my_timer_wait(1000);
+    my_timer__wait(1000);
   }
-  MY_USART_WRITE_CONST_F("almost there\n\n");
-  my_timer_wait(2000);
-  MY_USART_WRITE_CONST_F("EOF\nwe're done\n");
-  my_usart_flush();
+  MY_USART__WRITE_CONST_F("almost there\n\n");
+  my_timer__wait(2000);
+  MY_USART__WRITE_CONST_F("EOF\nwe're done\n");
+  my_usart__flush();
 }

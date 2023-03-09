@@ -47,7 +47,7 @@ static void _memcpy_volatile_from_pgm(
   }
 }
 
-static uint8_t _my_usart_write_common_check_size_and_compute_tail(uint8_t size)
+static uint8_t _my_usart__write_common_check_size_and_compute_tail(uint8_t size)
 {
   uint8_t ring_buffer_size;
   uint8_t ring_buffer_head;
@@ -109,7 +109,7 @@ static uint8_t _my_usart_write_common_check_size_and_compute_tail(uint8_t size)
     : ring_buffer_tail_not_wrapped - RING_BUFFER_MAX_SIZE;
 }
 
-static void _my_usart_write_common_update_ring_buffer_status(uint8_t size)
+static void _my_usart__write_common_update_ring_buffer_status(uint8_t size)
 {
   /*
    * After copying data, we can finally increase the ring buffer's size, once
@@ -164,7 +164,7 @@ ISR(USART_UDRE_vect)
   }
 }
 
-void my_usart_init(uint16_t baud_rate)
+void my_usart__init(uint16_t baud_rate)
 {
   // Keep in mind that we're going to set the baud rate divider to 16.
   uint16_t UBRR0_value = F_CPU / (16L * baud_rate) - 1;
@@ -200,7 +200,7 @@ void my_usart_init(uint16_t baud_rate)
   }
 }
 
-void my_usart_write(const char* data, uint8_t size)
+void my_usart__write(const char* data, uint8_t size)
 {
   // SANITY CHECKS
 
@@ -210,7 +210,7 @@ void my_usart_write(const char* data, uint8_t size)
     return;
   }
   uint8_t ring_buffer_tail =
-    _my_usart_write_common_check_size_and_compute_tail(size);
+    _my_usart__write_common_check_size_and_compute_tail(size);
   /*
    * It may not be possible to copy data in a single pass, because the available
    * bytes between the current tail and the end of the array may less than size.
@@ -229,10 +229,10 @@ void my_usart_write(const char* data, uint8_t size)
       _ring_buffer.data, &data[first_batch_size], size - first_batch_size
     );
   }
-  _my_usart_write_common_update_ring_buffer_status(size);
+  _my_usart__write_common_update_ring_buffer_status(size);
 }
 
-void my_usart_write_from_pgm(PGM_P data, uint8_t size)
+void my_usart__write_from_pgm(PGM_P data, uint8_t size)
 {
   // SANITY CHECKS
 
@@ -242,7 +242,7 @@ void my_usart_write_from_pgm(PGM_P data, uint8_t size)
     return;
   }
   uint8_t ring_buffer_tail =
-    _my_usart_write_common_check_size_and_compute_tail(size);
+    _my_usart__write_common_check_size_and_compute_tail(size);
   /*
    * It may not be possible to copy data in a single pass, because the available
    * bytes between the current tail and the end of the array may less than size.
@@ -261,14 +261,14 @@ void my_usart_write_from_pgm(PGM_P data, uint8_t size)
       _ring_buffer.data, &data[first_batch_size], size - first_batch_size
     );
   }
-  _my_usart_write_common_update_ring_buffer_status(size);
+  _my_usart__write_common_update_ring_buffer_status(size);
 }
 
 /**
  * Polls the flag TXC0 on UCSR0A until it becomes 1 (which means the USART
  * module has no more bytes to transmit).
  */
-void my_usart_flush()
+void my_usart__flush()
 {
   while (!(UCSR0A & bit(TXC0)));
 }

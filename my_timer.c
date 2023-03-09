@@ -4,7 +4,7 @@
 #include <Arduino.h>
 
 
-void my_timer_init()
+void my_timer__init()
 {
   /*
    * No output compare units activated, timer operating in normal mode
@@ -24,7 +24,7 @@ void my_timer_init()
   OCR1A = 0;
 }
 
-void my_timer_wait(uint16_t delay_in_ms)
+void my_timer__wait(uint16_t delay_in_ms)
 {
   /*
    * The timer's internal counter wraps back to 0 approximately every 4194.3 ms.
