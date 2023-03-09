@@ -3,19 +3,20 @@
 #include <avr/io.h>
 #include <Arduino.h>
 #include <util/atomic.h>
-#include "my_task.h"
 
 
 static bool _timeout_pending = false;
-static void (* _timeout_func)(void*) = NULL;
-static void* _timeout_args = NULL;
+static task_t _timeout_task =
+{
+  .func = NULL
+};
 
 ISR(TIMER1_COMPA_vect)
 {
   // If there's a pending task, queue it.
-  if (_timeout_func != NULL)
+  if (_timeout_task.func != NULL)
   {
-    my_task__queue_new(_timeout_func, _timeout_args);
+    my_task__queue_new(_timeout_task);
   }
   _timeout_pending = false;
 }
@@ -40,9 +41,7 @@ void my_timer__init()
   OCR1A = 0;
 }
 
-void my_timer__set_timeout(
-  uint16_t delay_in_ms, void (* func)(void*), void* args
-)
+void my_timer__set_timeout(uint16_t delay_in_ms, task_t task)
 {
   /*
    * The timer's internal counter wraps back to 0 approximately every 4194.3 ms.
@@ -57,15 +56,14 @@ void my_timer__set_timeout(
     exit(1);
   }
   /*
-   * Save func and args, so we can later queue a new task as soon as the output
-   * compare match occurs.
-   * Since pointers are 16 bit values and cannot be atomically saved or loaded,
-   * we have to do this inside an atomic block.
+   * Save task, so we can later queue a new task as soon as the output compare
+   * match occurs.
+   * Since structs cannot be atomically saved or loaded, we have to do this
+   * inside an atomic block.
    */
   ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
   {
-    _timeout_func = func;
-    _timeout_args = args;
+    _timeout_task = task;
   }
   /*
    * Convert the delay into an equivalent number of timer clocks.

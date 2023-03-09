@@ -6,13 +6,6 @@
 
 #define RING_BUFFER_MAX_SIZE 16
 
-typedef struct
-{
-  void (* func)(void*);
-  void* args;
-}
-task_t;
-
 static struct
 {
   volatile task_t data[RING_BUFFER_MAX_SIZE];
@@ -24,10 +17,10 @@ _ring_buffer =
   .size = 0
 };
 
-void my_task__queue_new(void (* func)(void*), void* args)
+void my_task__queue_new(task_t task)
 {
   // If no function was provided, just quit.
-  if (func == NULL)
+  if (task.func == NULL)
   {
     exit(1);
   }
@@ -66,8 +59,7 @@ void my_task__queue_new(void (* func)(void*), void* args)
       ring_buffer_new_tail -= RING_BUFFER_MAX_SIZE;
     }
     // Add the new task to the ring buffer.
-    _ring_buffer.data[ring_buffer_new_tail].func = func;
-    _ring_buffer.data[ring_buffer_new_tail].args = args;
+    _ring_buffer.data[ring_buffer_new_tail] = task;
     // Update the ring buffer's size.
     _ring_buffer.size = ring_buffer_previous_size + 1;
   }
