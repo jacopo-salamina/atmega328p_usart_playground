@@ -47,8 +47,12 @@ static void _memcpy_volatile_from_pgm(
   }
 }
 
-static uint8_t _my_usart__write_common_check_size_and_compute_tail(uint8_t size)
+static my_usart__return_status
+_my_usart__write_common_check_size_and_compute_tail(
+  uint8_t size, uint8_t* tail_ptr
+)
 {
+  my_usart__return_status status = my_usart__return_status_ok;
   uint8_t ring_buffer_size;
   uint8_t ring_buffer_head;
   /*
@@ -80,33 +84,34 @@ static uint8_t _my_usart__write_common_check_size_and_compute_tail(uint8_t size)
    */
   if (ring_buffer_free_space < size)
   {
-    exit(1);
+    status = my_usart__return_status_overflow;
   }
-
-  // ACTUAL BUFFER WRITES
-
-  /*
-   * We need to compute the ring buffer's tail now, once again according to the
-   * buffer's state we read in the atomic block above.
-   * 
-   * It's true that the data register empty ISR may have modified the buffer's
-   * state between the atomic block and this line of code. However, not only
-   * did the ISR *not* shrink the available space, it also didn't touch the
-   * buffer's tail (because, again, the ISR only consumes data).
-   * 
-   * It follows that the buffer's state we read above is sufficient for
-   * computing its tail.
-   * 
-   * We also need to keep in mind that the buffer's available data may wrap
-   * around the internal array's end, and thus the tail may be behind the head.
-   * This means that computing (head + size) is not enough, we also need to wrap
-   * that value around the buffer's maximum size.
-   */
-  uint16_t ring_buffer_tail_not_wrapped = ring_buffer_head + ring_buffer_size;
-  return
-    ring_buffer_tail_not_wrapped < RING_BUFFER_MAX_SIZE
-    ? ring_buffer_tail_not_wrapped
-    : ring_buffer_tail_not_wrapped - RING_BUFFER_MAX_SIZE;
+  if (my_usart__return_status_ok == status)
+  {
+    /*
+     * We need to compute the ring buffer's tail now, once again according to
+     * the buffer's state we read in the atomic block above.
+     * 
+     * It's true that the data register empty ISR may have modified the buffer's
+     * state between the atomic block and this line of code. However, not only
+     * did the ISR *not* shrink the available space, it also didn't touch the
+     * buffer's tail (because, again, the ISR only consumes data).
+     * 
+     * It follows that the buffer's state we read above is sufficient for
+     * computing its tail.
+     * 
+     * We also need to keep in mind that the buffer's available data may wrap
+     * around the internal array's end, and thus the tail may be behind the
+     * head. This means that computing (head + size) is not enough, we also need
+     * to wrap that value around the buffer's maximum size.
+     */
+    uint16_t ring_buffer_tail_not_wrapped = ring_buffer_head + ring_buffer_size;
+    *tail_ptr =
+      ring_buffer_tail_not_wrapped < RING_BUFFER_MAX_SIZE
+      ? ring_buffer_tail_not_wrapped
+      : ring_buffer_tail_not_wrapped - RING_BUFFER_MAX_SIZE;
+  }
+  return status;
 }
 
 static void _my_usart__write_common_update_ring_buffer_status(uint8_t size)
@@ -125,7 +130,7 @@ static void _my_usart__write_common_update_ring_buffer_status(uint8_t size)
      * flag TXC0 on UCSR0A, so we can later poll that flag in order to know when
      * will the transmission end.
      */
-    if (ring_buffer_previous_size == 0)
+    if (0 == ring_buffer_previous_size)
     {
       bitSet(UCSR0B, UDRIE0);
       bitSet(UCSR0A, TXC0);
@@ -147,7 +152,7 @@ ISR(USART_UDRE_vect)
    * beyond data's end.
    */
   _ring_buffer.head =
-    ring_buffer_previous_head == RING_BUFFER_MAX_SIZE - 1
+    RING_BUFFER_MAX_SIZE - 1 == ring_buffer_previous_head
     ? 0
     : ring_buffer_previous_head + 1;
   /*
@@ -158,14 +163,15 @@ ISR(USART_UDRE_vect)
    * ISR would be triggered over and over again (according to section 19.6.3).
    */
   uint8_t ring_buffer_new_size = --(_ring_buffer.size);
-  if (ring_buffer_new_size == 0)
+  if (0 == ring_buffer_new_size)
   {
     bitClear(UCSR0B, UDRIE0);
   }
 }
 
-void my_usart__init(uint16_t baud_rate)
+my_usart__return_status my_usart__init(uint16_t baud_rate)
 {
+  my_usart__return_status status = my_usart__return_status_ok;
   // Keep in mind that we're going to set the baud rate divider to 16.
   uint16_t UBRR0_value = F_CPU / (16L * baud_rate) - 1;
   /*
@@ -175,93 +181,109 @@ void my_usart__init(uint16_t baud_rate)
    */
   if (UBRR0_value & 0xf000)
   {
-    exit(1);
+    status = my_usart__return_status_bad_parameter;
   }
-  /*
-   * We need interrupts enabled after configuring USART; that's why we're
-   * annotating the atomic block with ATOMIC_FORCEON.
-   */
-  ATOMIC_BLOCK(ATOMIC_FORCEON)
+  if (my_usart__return_status_ok == status)
   {
-    UBRR0H = UBRR0_value >> 8;
-    UBRR0L = UBRR0_value & 0xff;
     /*
-     * No interrupts enabled (for now), only transmitter enabled, 8 bit
-     * characters (continued below).
+     * We need interrupts enabled after configuring USART; that's why we're
+     * annotating the atomic block with ATOMIC_FORCEON.
      */
-    UCSR0B = bit(TXEN0);
-    // Baud rate divider set to 16.
-    bitClear(UCSR0A, U2X0);
-    /*
-     * Asynchronous USART, no parity bit, one stop bit, 8 bit characters.
-     */
-    UCSR0C = bit(UCSZ01) | bit(UCSZ00);
-    //UCSR0C = bit(UPM01) | bit(USBS0) | bit(UCSZ01) | bit(UCSZ00);
+    ATOMIC_BLOCK(ATOMIC_FORCEON)
+    {
+      UBRR0H = UBRR0_value >> 8;
+      UBRR0L = UBRR0_value & 0xff;
+      /*
+       * No interrupts enabled (for now), only transmitter enabled, 8 bit
+       * characters (continued below).
+       */
+      UCSR0B = bit(TXEN0);
+      // Baud rate divider set to 16.
+      bitClear(UCSR0A, U2X0);
+      /*
+       * Asynchronous USART, no parity bit, one stop bit, 8 bit characters.
+       */
+      UCSR0C = bit(UCSZ01) | bit(UCSZ00);
+      //UCSR0C = bit(UPM01) | bit(USBS0) | bit(UCSZ01) | bit(UCSZ00);
+    }
   }
+  return status;
 }
 
-void my_usart__write(const char* data, uint8_t size)
+my_usart__return_status my_usart__write(const char* data, uint8_t size)
 {
-  // SANITY CHECKS
-
+  my_usart__return_status status = my_usart__return_status_ok;
   // Edge case where there's no data to write; we don't need to do anything.
-  if (size == 0)
+  if (0 == size)
   {
-    return;
+    return status;
   }
-  uint8_t ring_buffer_tail =
-    _my_usart__write_common_check_size_and_compute_tail(size);
-  /*
-   * It may not be possible to copy data in a single pass, because the available
-   * bytes between the current tail and the end of the array may less than size.
-   */
-  if (ring_buffer_tail <= RING_BUFFER_MAX_SIZE - size)
+  uint8_t ring_buffer_tail;
+  status = _my_usart__write_common_check_size_and_compute_tail(
+    size, &ring_buffer_tail
+  );
+  if (my_usart__return_status_ok == status)
   {
-    _memcpy_volatile(&_ring_buffer.data[ring_buffer_tail], data, size);    
+    /*
+     * It may not be possible to copy data in a single pass, because the
+     * available bytes between the current tail and the end of the array may be
+     * less than size.
+     */
+    if (ring_buffer_tail <= RING_BUFFER_MAX_SIZE - size)
+    {
+      _memcpy_volatile(&_ring_buffer.data[ring_buffer_tail], data, size);    
+    }
+    else
+    {
+      uint8_t first_batch_size = RING_BUFFER_MAX_SIZE - ring_buffer_tail;
+      _memcpy_volatile(
+        &_ring_buffer.data[ring_buffer_tail], data, first_batch_size
+      );
+      _memcpy_volatile(
+        _ring_buffer.data, &data[first_batch_size], size - first_batch_size
+      );
+    }
+    _my_usart__write_common_update_ring_buffer_status(size);
   }
-  else
-  {
-    uint8_t first_batch_size = RING_BUFFER_MAX_SIZE - ring_buffer_tail;
-    _memcpy_volatile(
-      &_ring_buffer.data[ring_buffer_tail], data, first_batch_size
-    );
-    _memcpy_volatile(
-      _ring_buffer.data, &data[first_batch_size], size - first_batch_size
-    );
-  }
-  _my_usart__write_common_update_ring_buffer_status(size);
+  return status;
 }
 
-void my_usart__write_from_pgm(PGM_P data, uint8_t size)
+my_usart__return_status my_usart__write_from_pgm(PGM_P data, uint8_t size)
 {
-  // SANITY CHECKS
-
+  my_usart__return_status status = my_usart__return_status_ok;
   // Edge case where there's no data to write; we don't need to do anything.
-  if (size == 0)
+  if (0 == size)
   {
-    return;
+    return status;
   }
-  uint8_t ring_buffer_tail =
-    _my_usart__write_common_check_size_and_compute_tail(size);
-  /*
-   * It may not be possible to copy data in a single pass, because the available
-   * bytes between the current tail and the end of the array may less than size.
-   */
-  if (ring_buffer_tail <= RING_BUFFER_MAX_SIZE - size)
+  uint8_t ring_buffer_tail;
+  status = _my_usart__write_common_check_size_and_compute_tail(
+    size, &ring_buffer_tail
+  );
+  if (my_usart__return_status_ok == status)
   {
-    _memcpy_volatile_from_pgm(&_ring_buffer.data[ring_buffer_tail], data, size);    
+    /*
+     * It may not be possible to copy data in a single pass, because the
+     * available bytes between the current tail and the end of the array may be
+     * less than size.
+     */
+    if (ring_buffer_tail <= RING_BUFFER_MAX_SIZE - size)
+    {
+      _memcpy_volatile_from_pgm(&_ring_buffer.data[ring_buffer_tail], data, size);    
+    }
+    else
+    {
+      uint8_t first_batch_size = RING_BUFFER_MAX_SIZE - ring_buffer_tail;
+      _memcpy_volatile_from_pgm(
+        &_ring_buffer.data[ring_buffer_tail], data, first_batch_size
+      );
+      _memcpy_volatile_from_pgm(
+        _ring_buffer.data, &data[first_batch_size], size - first_batch_size
+      );
+    }
+    _my_usart__write_common_update_ring_buffer_status(size);
   }
-  else
-  {
-    uint8_t first_batch_size = RING_BUFFER_MAX_SIZE - ring_buffer_tail;
-    _memcpy_volatile_from_pgm(
-      &_ring_buffer.data[ring_buffer_tail], data, first_batch_size
-    );
-    _memcpy_volatile_from_pgm(
-      _ring_buffer.data, &data[first_batch_size], size - first_batch_size
-    );
-  }
-  _my_usart__write_common_update_ring_buffer_status(size);
+  return status;
 }
 
 /**
