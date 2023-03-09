@@ -265,10 +265,10 @@ void my_usart__write_from_pgm(PGM_P data, uint8_t size)
 }
 
 /**
- * Polls the flag TXC0 on UCSR0A until it becomes 1 (which means the USART
- * module has no more bytes to transmit).
+ * Checks the flag TXC0 on UCSR0A; if it is 0, then the USART module still has
+ * some data to transmit.
  */
-void my_usart__flush()
+bool my_usart__is_transmission_active()
 {
-  while (!(UCSR0A & bit(TXC0)));
+  return !(UCSR0A & bit(TXC0));
 }

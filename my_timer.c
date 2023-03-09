@@ -2,7 +2,26 @@
 
 #include <avr/io.h>
 #include <Arduino.h>
+#include <util/atomic.h>
+#include "my_task.h"
 
+
+static void (* _timeout_func)(void*) = NULL;
+static void* _timeout_args = NULL;
+
+ISR(TIMER1_COMPA_vect)
+{
+  // If there's a pending task, queue it.
+  if (_timeout_func != NULL)
+  {
+    my_task__queue_new(_timeout_func, _timeout_args);
+  }
+  /*
+   * Disable the output compare match interrupt, in order to avoid triggering
+   * it over and over again.
+   */
+  bitClear(TIMSK1, OCIE1A);
+}
 
 void my_timer__init()
 {
@@ -24,7 +43,9 @@ void my_timer__init()
   OCR1A = 0;
 }
 
-void my_timer__wait(uint16_t delay_in_ms)
+void my_timer__set_timeout(
+  uint16_t delay_in_ms, void (* func)(void*), void* args
+)
 {
   /*
    * The timer's internal counter wraps back to 0 approximately every 4194.3 ms.
@@ -37,6 +58,17 @@ void my_timer__wait(uint16_t delay_in_ms)
   if (delay_in_ms > 4194)
   {
     exit(1);
+  }
+  /*
+   * Save func and args, so we can later queue a new task as soon as the output
+   * compare match occurs.
+   * Since pointers are 16 bit values and cannot be atomically saved or loaded,
+   * we have to do this inside an atomic block.
+   */
+  ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+  {
+    _timeout_func = func;
+    _timeout_args = args;
   }
   /*
    * Convert the delay into an equivalent number of timer clocks.
@@ -55,14 +87,23 @@ void my_timer__wait(uint16_t delay_in_ms)
    */
   OCR1A = TCNT1 + delay_in_timer_clock_cycles;
   /*
+   * Enable the output compare match interrupt (so we can queue a new task as
+   * soon as the output compare match occurs).
+   */
+  bitSet(TIMSK1, OCIE1A);
+  /*
    * Clear OCF1A on TIFR1, as we're going to poll that flag later in order to
    * know when the output compare match occurred.
    */
   bitSet(TIFR1, OCF1A);
-  /**
-   * Poll the flag OCF1A on TIFR1, until the flag becomes 1, which means that
-   * the output compare match with OCR1A occurred, and thus the delay specified
-   * in my_timer_set_delay() is over.
-   */
-  while (!(TIFR1 & bit(OCF1A)));
+}
+
+/**
+ * Check the flag OCF1A on TIFR1; if it is 0, then the output compare match with
+ * OCR1A did not occur yet, and thus the timeout specified in
+ * my_timer__set_timeout() is still pending.
+ */
+bool my_timer__is_timeout_pending()
+{
+  return !(TIFR1 & bit(OCF1A));
 }

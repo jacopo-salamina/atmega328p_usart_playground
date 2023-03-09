@@ -3,27 +3,29 @@
  * TODO Review struct initialization, as well as static and volatile attributes
  *  on members
  * TODO Should I write (n == 0) or (!n) ?
+ * TODO Review struct initialization (empty vs default initialization)
+ * TODO Review volatile usage (did I abuse it?)
  */
 
+#include "my_task_queue_1.h"
+#include "my_task.h"
 #include "my_timer.h"
 #include "my_usart.h"
 
 
-#define MY_USART__WRITE_CONST(str) my_usart__write(str, (sizeof str) - 1)
-#define MY_USART__WRITE_CONST_F(str) \
-my_usart__write_from_pgm(PSTR(str), (sizeof str) - 1)
-
 int main()
 {
+  bitSet(DDRB, DDB5);
+  bitSet(PORTB, PORTB5);
   my_timer__init();
   my_usart__init(9600);
-  MY_USART__WRITE_CONST_F("wait for it\n\n");
-  for (uint8_t i = 0; i < 10; i++)
-  {
-    my_timer__wait(1000);
-  }
-  MY_USART__WRITE_CONST_F("almost there\n\n");
-  my_timer__wait(2000);
-  MY_USART__WRITE_CONST_F("EOF\nwe're done\n");
-  my_usart__flush();
+  my_task_queue_1__queue queue = my_task_queue_1__create();
+  my_task_queue_1__start(&queue);
+  while
+  (
+    my_task__try_to_run_next()
+    || my_timer__is_timeout_pending()
+    || my_usart__is_transmission_active()
+  );
+  bitClear(PORTB, PORTB5);
 }
