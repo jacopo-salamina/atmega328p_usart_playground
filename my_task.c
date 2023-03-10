@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <util/atomic.h>
 
-#define RING_BUFFER_MAX_SIZE 16
+#define RING_BUFFER_MAX_SIZE 4
 
 /**
  * Ring buffer used for storing pending tasks.
@@ -49,8 +49,8 @@ return_status my_task__queue_new(task_t task)
          * Compute the ring buffer's new tail.
          * 
          * Note that no overflow can occur from this expression: both head and
-         * size cannot exceed 15 (RING_BUFFER_MAX_SIZE - 1), so
-         * ring_buffer_new_tail cannot exceed 31 (2 * RING_BUFFER_MAX_SIZE - 1).
+         * size cannot exceed 3 (RING_BUFFER_MAX_SIZE - 1), so
+         * ring_buffer_new_tail cannot exceed 7 (2 * RING_BUFFER_MAX_SIZE - 1).
          */
         uint8_t ring_buffer_new_tail =
           ring_buffer_head + ring_buffer_previous_size + 1;
@@ -59,9 +59,9 @@ return_status my_task__queue_new(task_t task)
          * its value accordingly.
          * 
          * Note that subtracting RING_BUFFER_MAX_SIZE once is enough to adjust
-         * ring_buffer_new_tail: its initial maximum value was 31
+         * ring_buffer_new_tail: its initial maximum value was 7
          * (2 * RING_BUFFER_MAX_SIZE - 1), thus subtracting RING_BUFFER_MAX_SIZE
-         * would lead to a maximum value of 15 (RING_BUFFER_MAX_SIZE - 1).
+         * would lead to a maximum value of 3 (RING_BUFFER_MAX_SIZE - 1).
          */
         if (ring_buffer_new_tail >= RING_BUFFER_MAX_SIZE)
         {
@@ -102,8 +102,8 @@ task_t my_task__try_to_read_next()
     uint8_t ring_buffer_previous_head = _ring_buffer.head;
     /*
      * Once again, this computation will never cause an overflow: both head
-     * and size cannot exceed 15 (RING_BUFFER_MAX_SIZE - 1), so
-     * ring_buffer_new_tail cannot exceed 30 (2 * RING_BUFFER_MAX_SIZE - 2).
+     * and size cannot exceed 3 (RING_BUFFER_MAX_SIZE - 1), so
+     * ring_buffer_new_tail cannot exceed 6 (2 * RING_BUFFER_MAX_SIZE - 2).
      */
     uint8_t ring_buffer_tail =
       ring_buffer_previous_head + ring_buffer_previous_size;
@@ -112,9 +112,9 @@ task_t my_task__try_to_read_next()
      * value accordingly.
      * 
      * Note that subtracting RING_BUFFER_MAX_SIZE once is enough to adjust
-     * ring_buffer_tail: its initial maximum value was 30
+     * ring_buffer_tail: its initial maximum value was 6
      * (2 * RING_BUFFER_MAX_SIZE - 2), thus subtracting RING_BUFFER_MAX_SIZE
-     * would lead to a maximum value of 14 (RING_BUFFER_MAX_SIZE - 1).
+     * would lead to a maximum value of 2 (RING_BUFFER_MAX_SIZE - 1).
      */
     if (ring_buffer_tail >= RING_BUFFER_MAX_SIZE)
     {
