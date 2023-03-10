@@ -4,32 +4,14 @@
 #include "return_status.h"
 
 
-/**
- * Stores data shared among the different tasks of this async method.
- */
-typedef struct
-{
-  struct
-  {
-    uint8_t seconds_left_to_wait_during_task_1;
-  }
-  data;
-}
-async_method_1__method;
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 /**
- * Create a new instance of this method.
+ * Start running this method.
  */
-async_method_1__method async_method_1__create();
-
-/**
- * Start running a specific instance of this method.
- */
-return_status async_method_1__start(async_method_1__method* method);
+return_status async_method_1__start();
 #ifdef __cplusplus
 }
 #endif

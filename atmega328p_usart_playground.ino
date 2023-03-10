@@ -28,8 +28,7 @@ int main()
 {
   my_timer__init();
   ASSERT_OK(my_usart__init(9600));
-  async_method_1__method method = async_method_1__create();
-  ASSERT_OK(async_method_1__start(&method));
+  ASSERT_OK(async_method_1__start());
   bool loop_running;
   /*
    * Keep checking whether any of the following conditions hold true:
