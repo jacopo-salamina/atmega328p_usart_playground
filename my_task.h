@@ -1,11 +1,12 @@
 #pragma once
 
 #include <stdbool.h>
+#include "return_status.h"
 
 
 typedef struct
 {
-  void (* func)(void*);
+  return_status (* func)(void*);
   void* args;
 }
 task_t;
@@ -17,7 +18,7 @@ extern "C"
 /**
  * Queue a new task instance (if there's enough available space).
  */
-void my_task__queue_new(task_t);
+return_status my_task__queue_new(task_t);
 
 /**
  * Attempt to retrieve the next available task. If no task is found, instead

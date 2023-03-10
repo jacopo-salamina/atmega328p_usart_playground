@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "return_status.h"
 
 
 /**
@@ -28,7 +29,7 @@ async_method_1__method async_method_1__create();
 /**
  * Start running a specific instance of this method.
  */
-void async_method_1__start(async_method_1__method* method);
+return_status async_method_1__start(async_method_1__method* method);
 #ifdef __cplusplus
 }
 #endif

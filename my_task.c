@@ -20,53 +20,61 @@ _ring_buffer =
   .size = 0
 };
 
-void my_task__queue_new(task_t task)
+return_status my_task__queue_new(task_t task)
 {
-  // If no function was provided, the task is invalid; just quit.
+  return_status status = return_status__ok;
+  // If no function was provided, the task is invalid.
   if (task.func == NULL)
   {
-    exit(1);
+    status = return_status__my_task__bad_parameter;
   }
-  /*
-   * Since both the main program and the ISRs may queue new tasks, we need to
-   * run the entire operation inside an atomic block.
-   */
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+  if (return_status__ok == status)
   {
-    uint8_t ring_buffer_head = _ring_buffer.head;
-    uint8_t ring_buffer_previous_size = _ring_buffer.size;
-    // If there's no room for a new task, just quit.
-    if (ring_buffer_previous_size == RING_BUFFER_MAX_SIZE)
-    {
-      exit(1);
-    }
     /*
-     * Compute the ring buffer's new tail.
-     * 
-     * Note that no overflow can occur from this expression: both head and size
-     * cannot exceed 15 (RING_BUFFER_MAX_SIZE - 1), so ring_buffer_new_tail
-     * cannot exceed 31 (2 * RING_BUFFER_MAX_SIZE - 1).
+     * Since both the main program and the ISRs may queue new tasks, we need to
+     * run the entire operation inside an atomic block.
      */
-    uint8_t ring_buffer_new_tail =
-      ring_buffer_head + ring_buffer_previous_size + 1;
-    /*
-     * If ring_buffer_new_tail exceeds the ring buffer's max size, adjust its
-     * value accordingly.
-     * 
-     * Note that subtracting RING_BUFFER_MAX_SIZE once is enough to adjust
-     * ring_buffer_new_tail: its initial maximum value was 31
-     * (2 * RING_BUFFER_MAX_SIZE - 1), thus subtracting RING_BUFFER_MAX_SIZE
-     * would lead to a maximum value of 15 (RING_BUFFER_MAX_SIZE - 1).
-     */
-    if (ring_buffer_new_tail >= RING_BUFFER_MAX_SIZE)
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-      ring_buffer_new_tail -= RING_BUFFER_MAX_SIZE;
+      uint8_t ring_buffer_head = _ring_buffer.head;
+      uint8_t ring_buffer_previous_size = _ring_buffer.size;
+      // If there's no room for a new task, return an error.
+      if (ring_buffer_previous_size == RING_BUFFER_MAX_SIZE)
+      {
+        status = return_status__my_task__overflow;
+      }
+      if (return_status__ok == status)
+      {
+        /*
+         * Compute the ring buffer's new tail.
+         * 
+         * Note that no overflow can occur from this expression: both head and
+         * size cannot exceed 15 (RING_BUFFER_MAX_SIZE - 1), so
+         * ring_buffer_new_tail cannot exceed 31 (2 * RING_BUFFER_MAX_SIZE - 1).
+         */
+        uint8_t ring_buffer_new_tail =
+          ring_buffer_head + ring_buffer_previous_size + 1;
+        /*
+         * If ring_buffer_new_tail exceeds the ring buffer's max size, adjust
+         * its value accordingly.
+         * 
+         * Note that subtracting RING_BUFFER_MAX_SIZE once is enough to adjust
+         * ring_buffer_new_tail: its initial maximum value was 31
+         * (2 * RING_BUFFER_MAX_SIZE - 1), thus subtracting RING_BUFFER_MAX_SIZE
+         * would lead to a maximum value of 15 (RING_BUFFER_MAX_SIZE - 1).
+         */
+        if (ring_buffer_new_tail >= RING_BUFFER_MAX_SIZE)
+        {
+          ring_buffer_new_tail -= RING_BUFFER_MAX_SIZE;
+        }
+        // Add the new task to the ring buffer.
+        _ring_buffer.data[ring_buffer_new_tail] = task;
+        // Update the ring buffer's size.
+        _ring_buffer.size = ring_buffer_previous_size + 1;
+      }
     }
-    // Add the new task to the ring buffer.
-    _ring_buffer.data[ring_buffer_new_tail] = task;
-    // Update the ring buffer's size.
-    _ring_buffer.size = ring_buffer_previous_size + 1;
   }
+  return status;
 }
 
 task_t my_task__try_to_read_next()

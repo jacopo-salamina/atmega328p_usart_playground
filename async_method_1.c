@@ -6,13 +6,14 @@
 #include "my_usart.h"
 
 
-static void _async_method_1__task_2(void* _bogus_ptr)
+static return_status _async_method_1__task_2(void* _bogus_ptr)
 {
-  MY_USART__WRITE_CONST_F("EOF\nwe're done\n");
+  return MY_USART__WRITE_CONST_F("EOF\nwe're done\n");
 }
 
-static void _async_method_1__task_1(void* ptr)
+static return_status _async_method_1__task_1(void* ptr)
 {
+  return_status status = return_status__ok;
   async_method_1__method* method_ptr = (async_method_1__method*) ptr;
   /**
    * If the initial number of idle seconds hasn't passed yet, decrease the
@@ -22,17 +23,18 @@ static void _async_method_1__task_1(void* ptr)
   if (method_ptr->data.seconds_left_to_wait_during_task_1 != 0)
   {
     method_ptr->data.seconds_left_to_wait_during_task_1--;
-    my_timer__set_timeout(
+    status = my_timer__set_timeout(
       1000, (task_t) {.func = _async_method_1__task_1, .args = ptr}
     );
   }
   else
   {
     MY_USART__WRITE_CONST_F("almost there\n\n");
-    my_timer__set_timeout(
+    status = my_timer__set_timeout(
       2000, (task_t) {.func = _async_method_1__task_2, .args = NULL}
     );
   }
+  return status;
 }
 
 async_method_1__method async_method_1__create()
@@ -46,8 +48,12 @@ async_method_1__method async_method_1__create()
   };
 }
 
-void async_method_1__start(async_method_1__method* method_ptr)
+return_status async_method_1__start(async_method_1__method* method_ptr)
 {
-  MY_USART__WRITE_CONST_F("wait for it\n\n");
-  _async_method_1__task_1(method_ptr);
+  return_status status = MY_USART__WRITE_CONST_F("wait for it\n\n");
+  if (return_status__ok == status)
+  {
+    status = _async_method_1__task_1(method_ptr);
+  }
+  return status;
 }

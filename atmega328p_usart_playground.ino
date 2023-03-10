@@ -11,14 +11,25 @@
 #include "my_task.h"
 #include "my_timer.h"
 #include "my_usart.h"
+#include "return_status.h"
 
+
+#define ASSERT_OK(expr) \
+do \
+{ \
+  if (return_status__ok != expr) \
+  { \
+    return 1; \
+  } \
+} \
+while (0)
 
 int main()
 {
   my_timer__init();
-  my_usart__init(9600);
+  ASSERT_OK(my_usart__init(9600));
   async_method_1__method method = async_method_1__create();
-  async_method_1__start(&method);
+  ASSERT_OK(async_method_1__start(&method));
   bool loop_running;
   /*
    * Keep checking whether any of the following conditions hold true:
@@ -47,7 +58,7 @@ int main()
     }
     if (next_task_found.func != NULL)
     {
-      next_task_found.func(next_task_found.args);
+      ASSERT_OK(next_task_found.func(next_task_found.args));
     }
   }
   while (loop_running);

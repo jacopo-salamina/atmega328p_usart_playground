@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "my_task.h"
+#include "return_status.h"
 
 
 #ifdef __cplusplus
@@ -18,7 +19,7 @@ void my_timer__init();
  * Schedule a specific task to be executed after the specified amount of
  * milliseconds.
  */
-void my_timer__set_timeout(uint16_t, task_t);
+return_status my_timer__set_timeout(uint16_t, task_t);
 
 /**
  * Checks whether a timeout is still pending or not.

@@ -60,8 +60,9 @@ void my_timer__init()
   OCR1A = 0;
 }
 
-void my_timer__set_timeout(uint16_t delay_in_ms, task_t task)
+return_status my_timer__set_timeout(uint16_t delay_in_ms, task_t task)
 {
+  return_status status = return_status__ok;
   /*
    * The timer's internal counter wraps back to 0 approximately every 4194.3 ms.
    * If we tried to generate a 4195 ms (or longer) delay, we would need to
@@ -72,50 +73,58 @@ void my_timer__set_timeout(uint16_t delay_in_ms, task_t task)
    */
   if (delay_in_ms > 4194)
   {
-    exit(1);
+    status = return_status__my_timer__bad_parameter;
   }
-  // If the supplied task is not valid, just quit.
   else if (task.func == NULL)
   {
-    exit(1);
+    status = return_status__my_timer__bad_parameter;
   }
-  /*
-   * If we already scheduled a task, just quit.
-   * Otherwise, save the new task, so we can later queue it as soon as the
-   * output compare match occurs.
-   * 
-   * Since structs cannot be atomically saved or loaded, we have to do this
-   * inside an atomic block.
-   */
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+  if (return_status__ok == status)
   {
-    if (_scheduled_task.func != NULL)
+    /*
+     * If we didn't schedule a task already, save the new task, so we can later
+     * queue it as soon as the output compare match occurs.
+     * 
+     * Since structs cannot be atomically saved or loaded, we have to do this
+     * inside an atomic block.
+     */
+    ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-      exit(1);
+      if (_scheduled_task.func != NULL)
+      {
+        status = return_status__my_timer__other;
+      }
+      else
+      {
+        _scheduled_task = task;
+      }
     }
-    _scheduled_task = task;
   }
-  /*
-   * Convert the delay into an equivalent number of timer clocks.
-   * 
-   * This results in a small rounding error, which builds up over time and
-   * messes up longer delays (e.g. a one minute delay gets smaller by 0.1
-   * seconds). Since we don't need to generate very long delays, and also for
-   * simplicity's sake, we're ignoring this error.
-   */
-  uint16_t delay_in_timer_clock_cycles = delay_in_ms * F_CPU / 1024 / 1000;
-  /*
-   * Compute the future value of TCNT1 after delay_ms milliseconds, and store
-   * it into OCR1A (in order to trigger the output compare match). We don't care
-   * about a potential overflow, as the counter would overflow as well and reach
-   * OCR1A after exactly delay_in_timer_clock_cycles cycles.
-   */
-  OCR1A = TCNT1 + delay_in_timer_clock_cycles;
-  /*
-   * Enable the output compare match interrupt (so we can queue a new task as
-   * soon as the output compare match occurs).
-   */
-  bitSet(TIMSK1, OCIE1A);
+  if (return_status__ok == status)
+  {
+    /*
+     * Convert the delay into an equivalent number of timer clocks.
+     * 
+     * This results in a small rounding error, which builds up over time and
+     * messes up longer delays (e.g. a one minute delay gets smaller by 0.1
+     * seconds). Since we don't need to generate very long delays, and also for
+     * simplicity's sake, we're ignoring this error.
+     */
+    uint16_t delay_in_timer_clock_cycles = delay_in_ms * F_CPU / 1024 / 1000;
+    /*
+     * Compute the future value of TCNT1 after delay_ms milliseconds, and store
+     * it into OCR1A (in order to trigger the output compare match). We don't
+     * care about a potential overflow, as the counter would overflow as well
+     * and reach OCR1A after exactly delay_in_timer_clock_cycles cycles.
+     */
+    OCR1A = TCNT1 + delay_in_timer_clock_cycles;
+    /*
+     * Enable the output compare match interrupt (so we can queue a new task as
+     * soon as the output compare match occurs).
+     */
+    bitSet(TIMSK1, OCIE1A);
+  }
+  return status;
 }
 
 bool my_timer__is_timeout_pending()
