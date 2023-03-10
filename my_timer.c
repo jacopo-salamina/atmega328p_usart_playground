@@ -120,14 +120,6 @@ void my_timer__set_timeout(uint16_t delay_in_ms, task_t task)
 
 bool my_timer__is_timeout_pending()
 {
-  bool pending;
-  /*
-   * Since memory addresses are 16 bit wide, reading them atomically is not
-   * possible; thus, we need an atomic block.
-   */
-  ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
-  {
-    pending = _scheduled_task.func != NULL;
-  }
-  return pending;
+  // Keep in mind, this method is expected to run inside an outer atomic block.
+  return _scheduled_task.func != NULL;
 }
