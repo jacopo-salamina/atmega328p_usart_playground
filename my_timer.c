@@ -17,10 +17,7 @@
  * cleared when running the associated ISR. Thus, we need to manually track the
  * status of the timeout.
  */
-static task_t _scheduled_task =
-{
-  .func = NULL
-};
+static my_task__task_t _scheduled_task = {.func = NULL};
 
 ISR(TIMER1_COMPA_vect)
 {
@@ -60,7 +57,7 @@ void my_timer__init()
   OCR1A = 0;
 }
 
-return_status my_timer__set_timeout(uint16_t delay_in_ms, task_t task)
+return_status my_timer__set_timeout(uint16_t delay_in_ms, my_task__task_t task)
 {
   return_status status = return_status__ok;
   /*

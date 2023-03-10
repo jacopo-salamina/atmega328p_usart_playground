@@ -11,7 +11,7 @@
  */
 static struct
 {
-  volatile task_t data[RING_BUFFER_MAX_SIZE];
+  volatile my_task__task_t data[RING_BUFFER_MAX_SIZE];
   volatile uint8_t head, size;
 }
 _ring_buffer =
@@ -20,7 +20,7 @@ _ring_buffer =
   .size = 0
 };
 
-return_status my_task__queue_new(task_t task)
+return_status my_task__queue_new(my_task__task_t task)
 {
   return_status status = return_status__ok;
   // If no function was provided, the task is invalid.
@@ -77,7 +77,7 @@ return_status my_task__queue_new(task_t task)
   return status;
 }
 
-task_t my_task__try_to_read_next()
+my_task__task_t my_task__try_to_read_next()
 {
   /*
    * Reserve some space for a copy of the next task.
@@ -87,10 +87,7 @@ task_t my_task__try_to_read_next()
    * we're using func just like a flag: we set it to NULL at first, and then, if
    * there actually is a new task, func will no longer be NULL.
    */
-  task_t task =
-  {
-    .func = NULL
-  };
+  my_task__task_t task = {.func = NULL};
   // Keep in mind, this method is expected to run within an outer atomic block.
   uint8_t ring_buffer_previous_size = _ring_buffer.size;
   /*

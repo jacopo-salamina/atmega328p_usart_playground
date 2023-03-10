@@ -19,7 +19,7 @@ void my_timer__init();
  * Schedule a specific task to be executed after the specified amount of
  * milliseconds.
  */
-return_status my_timer__set_timeout(uint16_t, task_t);
+return_status my_timer__set_timeout(uint16_t, my_task__task_t);
 
 /**
  * Checks whether a timeout is still pending or not.

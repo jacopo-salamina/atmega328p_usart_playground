@@ -46,7 +46,7 @@ int main()
    */
   do
   {
-    task_t next_task_found;
+    my_task__task_t next_task_found;
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
       next_task_found = my_task__try_to_read_next();
@@ -57,7 +57,7 @@ int main()
     }
     if (next_task_found.func != NULL)
     {
-      ASSERT_OK(next_task_found.func(next_task_found.args));
+      ASSERT_OK(next_task_found.func(next_task_found.arg));
     }
   }
   while (loop_running);
