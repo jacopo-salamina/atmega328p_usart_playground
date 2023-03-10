@@ -5,7 +5,7 @@
 #include <Arduino.h>
 
 
-#define RING_BUFFER_MAX_SIZE 127
+#define RING_BUFFER_MAX_SIZE 64
 /**
  * Ring buffer used for storing the serial port's output data.
  */
@@ -26,7 +26,9 @@ _ring_buffer =
  * - dest is also volatile;
  * - up to 255 bytes may be copied (for convenience reasons only).
  */
-static void _memcpy_volatile(volatile char* dest, const char* src, uint8_t size)
+static void _memcpy_volatile(
+  volatile char * dest, const char * src, uint8_t size
+)
 {
   for (uint8_t i = 0; i < size; i++)
   {
@@ -38,7 +40,7 @@ static void _memcpy_volatile(volatile char* dest, const char* src, uint8_t size)
  * Identical to _memcpy_volatile(), except src points to program memory.
  */
 static void _memcpy_volatile_from_pgm(
-  volatile char* dest, PGM_P src, uint8_t size
+  volatile char * dest, PGM_P src, uint8_t size
 )
 {
   for (uint8_t i = 0; i < size; i++)
@@ -48,7 +50,7 @@ static void _memcpy_volatile_from_pgm(
 }
 
 static return_status _my_usart__write_common_check_size_and_compute_tail(
-  uint8_t size, uint8_t* tail_ptr
+  uint8_t size, uint8_t * tail_ptr
 )
 {
   return_status status = return_status__ok;
@@ -213,7 +215,7 @@ return_status my_usart__init(uint16_t baud_rate)
   return status;
 }
 
-return_status my_usart__write(const char* data, uint8_t size)
+return_status my_usart__write(const char * data, uint8_t size)
 {
   // Edge case where there's no data to write; we don't need to do anything.
   if (size == 0)

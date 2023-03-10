@@ -8,12 +8,12 @@
 
 static uint8_t _seconds_left_to_wait_during_task_1 = 10;
 
-static return_status _async_method_1__task_2(void* _bogus_ptr)
+static return_status _async_method_1__task_2(void * _bogus_ptr)
 {
   return MY_USART__WRITE_CONST_F("EOF\nwe're done\n");
 }
 
-static return_status _async_method_1__task_1(void* _bogus_ptr)
+static return_status _async_method_1__task_1(void * _bogus_ptr)
 {
   return_status status = return_status__ok;
   /**

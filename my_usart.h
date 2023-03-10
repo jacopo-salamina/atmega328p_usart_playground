@@ -24,7 +24,7 @@ return_status my_usart__init(uint16_t);
  * Reads a string from SRAM and writes it in a non-blocking fashion (store its
  * contents inside an internal buffer).
  */
-return_status my_usart__write_from_sram(const char*, uint8_t);
+return_status my_usart__write_from_sram(const char *, uint8_t);
 
 /**
  * Same as my_usart__write_from_sram, but the string is read from the program

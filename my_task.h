@@ -6,8 +6,8 @@
 
 typedef struct
 {
-  return_status (* func)(void*);
-  void* args;
+  return_status (* func)(void *);
+  void * args;
 }
 task_t;
 
