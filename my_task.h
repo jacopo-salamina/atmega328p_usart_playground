@@ -13,9 +13,11 @@ typedef union
 }
 my_task__arg_t;
 
+typedef return_status (* my_task__func_t)(my_task__arg_t);
+
 typedef struct
 {
-  return_status (* func)(my_task__arg_t);
+  my_task__func_t func;
   my_task__arg_t arg;
 }
 my_task__task_t;
