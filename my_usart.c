@@ -292,17 +292,7 @@ return_status my_usart__write_from_pgm(PGM_P data, uint8_t size)
   return status;
 }
 
-/**
- * Checks the flag TXC0 on UCSR0A; if it is 0, then the USART module still has
- * some data to transmit.
- * 
- * Keep in mind that the transmission complete interrupt is disabled; otherwise,
- * this flag would be set to 1 only if both conditions held true:
- * - interrupts were temporarily disabled (e.g. inside an atomic block);
- * - the transmission is completed;
- * which means that inspecting the flag would be useless.
- */
 bool my_usart__is_transmission_active()
 {
-  return !(UCSR0A & bit(TXC0));
+  return 0 != _ring_buffer.size;
 }
