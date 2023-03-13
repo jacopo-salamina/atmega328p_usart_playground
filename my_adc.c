@@ -43,7 +43,7 @@ return_status my_adc__start_conversion(my_task__func_t func)
 {
   return_status status = return_status__ok;
   // A NULL function pointer is not valid.
-  if (func == NULL)
+  if (NULL == func)
   {
     status = return_status__my_adc__bad_parameter;
   }
@@ -58,7 +58,7 @@ return_status my_adc__start_conversion(my_task__func_t func)
       */
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-      if (_conversion_complete_func != NULL)
+      if (NULL != _conversion_complete_func)
       {
         status = return_status__my_adc__other;
       }

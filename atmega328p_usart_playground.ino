@@ -55,11 +55,11 @@ int main()
     {
       next_task_found = my_task__try_to_read_next();
       loop_running =
-        next_task_found.func != NULL
+        NULL != next_task_found.func
         || my_timer__is_timeout_pending()
         || my_usart__is_transmission_active();
     }
-    if (next_task_found.func != NULL)
+    if (NULL != next_task_found.func)
     {
       ASSERT_OK(next_task_found.func(next_task_found.arg));
     }

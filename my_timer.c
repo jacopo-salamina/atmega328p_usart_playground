@@ -72,7 +72,7 @@ return_status my_timer__set_timeout(uint16_t delay_in_ms, my_task__task_t task)
   {
     status = return_status__my_timer__bad_parameter;
   }
-  else if (task.func == NULL)
+  else if (NULL == task.func)
   {
     status = return_status__my_timer__bad_parameter;
   }
@@ -87,7 +87,7 @@ return_status my_timer__set_timeout(uint16_t delay_in_ms, my_task__task_t task)
      */
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-      if (_scheduled_task.func != NULL)
+      if (NULL != _scheduled_task.func)
       {
         status = return_status__my_timer__other;
       }
@@ -127,5 +127,5 @@ return_status my_timer__set_timeout(uint16_t delay_in_ms, my_task__task_t task)
 bool my_timer__is_timeout_pending()
 {
   // Keep in mind, this method is expected to run inside an outer atomic block.
-  return _scheduled_task.func != NULL;
+  return NULL != _scheduled_task.func;
 }

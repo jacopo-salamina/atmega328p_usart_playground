@@ -24,7 +24,7 @@ return_status my_task__queue_new(my_task__task_t task)
 {
   return_status status = return_status__ok;
   // If no function was provided, the task is invalid.
-  if (task.func == NULL)
+  if (NULL == task.func)
   {
     status = return_status__my_task__bad_parameter;
   }
