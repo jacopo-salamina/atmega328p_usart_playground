@@ -1,7 +1,8 @@
 #include "async_method_2.h"
 
+#include <stddef.h>
 #include "my_adc.h"
-#include "my_task.h"
+#include "my_timer.h"
 #include "my_usart.h"
 
 
@@ -20,10 +21,20 @@ static return_status _async_method_2__adc_callback(my_task__arg_t arg)
     byte_to_hex(arg._ushort & 0xf),
     '\n'
   };
-  return my_usart__write_from_sram(value_str, 6);
+  return_status status = my_usart__write_from_sram(value_str, 6);
+  if (return_status__ok == status)
+  {
+    status = my_timer__set_timeout(
+      100,
+      (my_task__task_t){
+        .func = async_method_2__start, .arg = MY_TASK__EMPTY_ARG
+      }
+    );
+  }
+  return status;
 }
 
-return_status async_method_2__start()
+return_status async_method_2__start(my_task__arg_t _bogus_arg)
 {
   return my_adc__start_conversion(_async_method_2__adc_callback);
 }
