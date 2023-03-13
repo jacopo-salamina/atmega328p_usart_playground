@@ -215,7 +215,7 @@ return_status my_usart__init(uint16_t baud_rate)
   return status;
 }
 
-return_status my_usart__write(const char * data, uint8_t size)
+return_status my_usart__write_from_sram(const char * data, uint8_t size)
 {
   // Edge case where there's no data to write; we don't need to do anything.
   if (size == 0)
