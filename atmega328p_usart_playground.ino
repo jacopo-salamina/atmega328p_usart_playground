@@ -4,10 +4,13 @@
  * TODO Review struct initialization (empty vs default initialization, BSS vs
  *  init functions)
  * TODO Review volatile usage (did I abuse it?)
+ * TODO How should interrupts check whether my_task__queue_new doesn't return an
+ *  error?
  */
 
 #include <util/atomic.h>
-#include "async_method_1.h"
+#include "async_method_2.h"
+#include "my_adc.h"
 #include "my_task.h"
 #include "my_timer.h"
 #include "my_usart.h"
@@ -26,9 +29,10 @@ while (0)
 
 int main()
 {
+  my_adc__init();
   my_timer__init();
   ASSERT_OK(my_usart__init(9600));
-  ASSERT_OK(async_method_1__start());
+  ASSERT_OK(async_method_2__start());
   bool loop_running;
   /*
    * Keep checking whether any of the following conditions hold true:

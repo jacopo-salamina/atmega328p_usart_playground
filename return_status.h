@@ -15,5 +15,8 @@ typedef enum
   return_status__my_task__bad_parameter,
   return_status__my_task__overflow,
   return_status__my_task__other,
+  // ADC-related states
+  return_status__my_adc__bad_parameter,
+  return_status__my_adc__other,
 }
 return_status;
