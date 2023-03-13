@@ -24,10 +24,10 @@ return_status my_timer__set_timeout(uint16_t, my_task__task_t);
 /**
  * Checks whether a timeout is still pending or not.
  * 
- * Note: this method lacks any atomicity safeguards, and is expected to run
- * inside an outer atomic block. This is intentional, as the main loop needs to
- * atomically check the state of the task manager, this timer and the USART
- * module.
+ * Note: this method lacks any atomicity safeguards, and is expected to be run
+ * within an outer atomic block. This is intentional, as the main loop needs to
+ * atomically check the state of the task manager, the USART module, the timer
+ * and the ADC module.
  */
 bool my_timer__is_timeout_pending();
 #ifdef __cplusplus

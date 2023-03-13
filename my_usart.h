@@ -34,6 +34,11 @@ return_status my_usart__write_from_pgm(PGM_P, uint8_t);
 
 /**
  * Checks whether there's an ongoing transmission.
+ * 
+ * Note: this method lacks any atomicity safeguards, and is expected to be run
+ * within an outer atomic block. This is intentional, as the main loop needs to
+ * atomically check the state of the task manager, the USART module, the timer
+ * and the ADC module.
  */
 bool my_usart__is_transmission_active();
 #ifdef __cplusplus

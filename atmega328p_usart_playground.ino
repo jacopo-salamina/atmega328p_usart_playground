@@ -78,7 +78,8 @@ int main_without_debug_pin()
       loop_running =
         NULL != next_task_found.func
         || my_timer__is_timeout_pending()
-        || my_usart__is_transmission_active();
+        || my_usart__is_transmission_active()
+        || my_adc__is_conversion_active();
     }
     if (NULL != next_task_found.func)
     {

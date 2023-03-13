@@ -39,8 +39,8 @@ return_status my_task__queue_new(my_task__task_t);
  * 
  * Note: this method lacks any atomicity safeguards, and is expected to be run
  * within an outer atomic block. This is intentional, as the main loop needs to
- * atomically check the state of this task manager, the USART module and the
- * timer.
+ * atomically check the state of the task manager, the USART module, the timer
+ * and the ADC module.
  */
 my_task__task_t my_task__try_to_read_next();
 #ifdef __cplusplus

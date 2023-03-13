@@ -72,3 +72,8 @@ return_status my_adc__start_conversion(my_task__func_t func)
   }
   return status;
 }
+
+bool my_adc__is_conversion_active()
+{
+  return NULL != _conversion_complete_func;
+}
