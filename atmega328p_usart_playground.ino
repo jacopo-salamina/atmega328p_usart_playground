@@ -27,7 +27,28 @@ do \
 } \
 while (0)
 
+/**
+ * Wrapper around the real main function, which drives an LED as soon as the
+ * former returns something other than 0.
+ */
 int main()
+{
+  // Configure pin n. 13 as output.
+  bitSet(DDRB, DDB5);
+  // Turn off the LED on the debug pin.
+  bitClear(PORTB, PORTB5);
+  // If something goes wrong, turn on the LED on the debug pin.
+  if (main_without_debug_pin())
+  {
+    bitSet(PORTB, PORTB5);
+  }
+}
+
+/**
+ * Actual main function, which returns 0 unless a function returns an error
+ * status.
+ */
+int main_without_debug_pin()
 {
   my_adc__init();
   my_timer__init();
@@ -65,4 +86,5 @@ int main()
     }
   }
   while (loop_running);
+  return 0;
 }
