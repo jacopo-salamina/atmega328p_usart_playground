@@ -24,12 +24,7 @@ static return_status _async_method_2__adc_callback(my_task__arg_t arg)
   return_status status = my_usart__write_from_sram(value_str, 6);
   if (return_status__ok == status)
   {
-    status = my_timer__set_timeout(
-      100,
-      (my_task__task_t){
-        .func = async_method_2__start, .arg = MY_TASK__EMPTY_ARG
-      }
-    );
+    status = my_timer__set_timeout(100, async_method_2__start);
   }
   return status;
 }

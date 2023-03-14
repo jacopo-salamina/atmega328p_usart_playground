@@ -6,12 +6,14 @@
 #include "my_usart.h"
 
 
+static uint8_t _seconds_before_scheduling_task_2 = 10;
+
 static return_status _async_method_1__task_2(my_task__arg_t _bogus_arg)
 {
   return MY_USART__WRITE_CONST_F("EOF\nwe're done\n");
 }
 
-static return_status _async_method_1__task_1(my_task__arg_t arg)
+static return_status _async_method_1__task_1(my_task__arg_t _bogus_arg)
 {
   return_status status = return_status__ok;
   /**
@@ -19,24 +21,15 @@ static return_status _async_method_1__task_1(my_task__arg_t arg)
    * number, then reschedule this task one second later.
    * Otherwise, we can schedule task 2.
    */
-  if (arg._ubyte != 0)
+  if (0 != _seconds_before_scheduling_task_2)
   {
-    status = my_timer__set_timeout(
-      1000,
-      (my_task__task_t) {
-        .func = _async_method_1__task_1, .arg._ubyte = arg._ubyte - 1
-      }
-    );
+    _seconds_before_scheduling_task_2--;
+    status = my_timer__set_timeout(1000, _async_method_1__task_1);
   }
   else
   {
     MY_USART__WRITE_CONST_F("almost there\n\n");
-    status = my_timer__set_timeout(
-      2000,
-      (my_task__task_t) {
-        .func = _async_method_1__task_2, .arg = MY_TASK__EMPTY_ARG
-      }
-    );
+    status = my_timer__set_timeout(2000, _async_method_1__task_2);
   }
   return status;
 }
@@ -46,7 +39,7 @@ return_status async_method_1__start()
   return_status status = MY_USART__WRITE_CONST_F("wait for it\n\n");
   if (return_status__ok == status)
   {
-    status = _async_method_1__task_1((my_task__arg_t){._ubyte = 10});
+    status = _async_method_1__task_1(MY_TASK__EMPTY_ARG);
   }
   return status;
 }

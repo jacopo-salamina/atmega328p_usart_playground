@@ -6,10 +6,11 @@
 
 
 /**
- * Task which will be queued after a specific timeout.
+ * Callback which will be turned into an empty argument task after a specific
+ * timeout.
  * 
- * func is also used as a "flag": if it's set to NULL, that means no task was
- * scheduled (no function can have NULL as address), and thus no timeout is
+ * This is also used as a "flag": if it's set to NULL, that means no callback
+ * was scheduled (no function can have NULL as address), and thus no timeout is
  * pending.
  * 
  * Keep in mind that, since the output compare match interrupt is enabled, the
@@ -17,19 +18,21 @@
  * cleared when running the associated ISR. Thus, we need to manually track the
  * status of the timeout.
  */
-static my_task__task_t _scheduled_task = {.func = NULL};
+static my_task__func_t _scheduled_func = NULL;
 
 ISR(TIMER1_COMPA_vect)
 {
   /*
-   * Queue the scheduled task.
+   * Queue a task which runs _scheduled_func with the empty argument.
    * 
    * Keep in mind that we're running inside an ISR, and by default nested ISRs
    * are not allowed, which means we don't need an atomic block for reading
-   * _scheduled_task.
+   * _scheduled_func.
    */
-  my_task__queue_new(_scheduled_task);
-  _scheduled_task.func = NULL;
+  my_task__queue_new(
+    (my_task__task_t){.func = _scheduled_func, .arg = MY_TASK__EMPTY_ARG}
+  );
+  _scheduled_func = NULL;
   /*
    * Disable the output compare match interrupt; otherwise, this ISR would run
    * twice, without a valid task to queue.
@@ -57,7 +60,7 @@ void my_timer__init()
   OCR1A = 0;
 }
 
-return_status my_timer__set_timeout(uint16_t delay_in_ms, my_task__task_t task)
+return_status my_timer__set_timeout(uint16_t delay_in_ms, my_task__func_t func)
 {
   return_status status = return_status__ok;
   /*
@@ -72,28 +75,28 @@ return_status my_timer__set_timeout(uint16_t delay_in_ms, my_task__task_t task)
   {
     status = return_status__my_timer__bad_parameter;
   }
-  else if (NULL == task.func)
+  else if (NULL == func)
   {
     status = return_status__my_timer__bad_parameter;
   }
   if (return_status__ok == status)
   {
     /*
-     * If we didn't schedule a task already, save the new task, so we can later
-     * queue it as soon as the output compare match occurs.
+     * If we didn't schedule a task already, save the new callback, so we can
+     * later queue a task as soon as the output compare match occurs.
      * 
-     * Since structs cannot be atomically saved or loaded, we have to do this
-     * inside an atomic block.
+     * Since function pointers cannot be atomically saved or loaded, we have to
+     * do this inside an atomic block.
      */
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
     {
-      if (NULL != _scheduled_task.func)
+      if (NULL != _scheduled_func)
       {
         status = return_status__my_timer__other;
       }
       else
       {
-        _scheduled_task = task;
+        _scheduled_func = func;
       }
     }
   }
@@ -127,5 +130,5 @@ return_status my_timer__set_timeout(uint16_t delay_in_ms, my_task__task_t task)
 bool my_timer__is_timeout_pending()
 {
   // Keep in mind, this method is expected to run inside an outer atomic block.
-  return NULL != _scheduled_task.func;
+  return NULL != _scheduled_func;
 }
