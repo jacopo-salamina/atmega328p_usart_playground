@@ -119,18 +119,11 @@ my_task__task_t my_task__try_to_read_next()
       ring_buffer_tail -= RING_BUFFER__MAX_SIZE;
     }
     task = _ring_buffer.data[ring_buffer_tail];
-    // Compute the new value for _ring_buffer.head .
-    uint8_t ring_buffer_new_head = ring_buffer_previous_head + 1;
-    /*
-     * If ring_buffer_new_head exceeds the ring buffer's max size, adjust its
-     * value accordingly.
-     */
-    if (ring_buffer_new_head >= RING_BUFFER__MAX_SIZE)
-    {
-      ring_buffer_new_head -= RING_BUFFER__MAX_SIZE;
-    }
     // Update both head and size of the ring buffer.
-    _ring_buffer.head = ring_buffer_new_head;
+    _ring_buffer.head =
+      RING_BUFFER__MAX_SIZE - 1 == ring_buffer_previous_head
+      ? 0
+      : ring_buffer_previous_head + 1;
     _ring_buffer.size = ring_buffer_previous_size - 1;
   }
   return task;

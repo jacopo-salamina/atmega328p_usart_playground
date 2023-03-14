@@ -56,8 +56,8 @@ return_status my_adc__start_conversion(my_task__func_t func)
   if (return_status__ok == status)
   {
     /*
-      * If _conversion_complete_func is not NULL, an ADC conversion has already
-      * started without being completed yet.
+      * If no callback was saved previously, that means there's no active
+      * conversion: save our callback.
       * 
       * Function pointers are 16 bit wide and cannot be read atomically, thus we
       * need an atomic block for performing the aforementioned check.
@@ -68,13 +68,16 @@ return_status my_adc__start_conversion(my_task__func_t func)
       {
         status = return_status__my_adc__other;
       }
+      else
+      {
+        _conversion_complete_func = func;
+      }
     }
   }
   if (return_status__ok == status)
   {
-    // Start the ADC conversion and save the pointer to the callback.
+    // Start the ADC conversion.
     bitSet(ADCSRA, ADSC);
-    _conversion_complete_func = func;
   }
   return status;
 }

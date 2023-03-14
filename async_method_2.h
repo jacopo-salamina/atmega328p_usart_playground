@@ -1,6 +1,5 @@
 #pragma once
 
-#include "my_task.h"
 #include "return_status.h"
 
 
@@ -11,7 +10,7 @@ extern "C"
 /**
  * Start running this method.
  */
-return_status async_method_2__start(my_task__arg_t);
+return_status async_method_2__start();
 #ifdef __cplusplus
 }
 #endif

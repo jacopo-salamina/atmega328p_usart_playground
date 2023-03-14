@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "my_adc.h"
+#include "my_task.h"
 #include "my_timer.h"
 #include "my_usart.h"
 
@@ -87,12 +88,17 @@ static return_status _async_method_2__adc_callback(my_task__arg_t arg)
   return status;
 }
 
-return_status async_method_2__start(my_task__arg_t _bogus_arg)
+return_status _async_method_2__main_task(my_task__arg_t _bogus_arg)
 {
-  return_status status = my_timer__set_timeout(25, async_method_2__start);
+  return_status status = my_timer__set_timeout(25, _async_method_2__main_task);
   if (return_status__ok == status)
   {
     status = my_adc__start_conversion(_async_method_2__adc_callback);
   }
   return status;
+}
+
+return_status async_method_2__start()
+{
+  return _async_method_2__main_task(MY_TASK__EMPTY_ARG);
 }

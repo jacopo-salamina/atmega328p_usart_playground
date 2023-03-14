@@ -101,7 +101,13 @@ static return_status _my_usart__write_common_check_size_and_compute_tail(
      * It follows that the buffer's state we read above is sufficient for
      * computing its tail.
      */
-    uint16_t ring_buffer_tail_not_wrapped = ring_buffer_head + ring_buffer_size;
+    #if RING_BUFFER__MAX_SIZE <= 127
+      #define TAIL_T uint8_t
+    #else
+      #define TAIL_T uint16_t
+    #endif
+    TAIL_T ring_buffer_tail_not_wrapped = ring_buffer_head + ring_buffer_size;
+    #undef TAIL_T
     /*
      * We also need to keep in mind that the buffer's available data may wrap
      * around the internal array's end, and thus the tail may be behind the
@@ -190,27 +196,17 @@ return_status my_usart__init(uint16_t baud_rate)
   }
   if (return_status__ok == status)
   {
+    UBRR0H = UBRR0_value >> 8;
+    UBRR0L = UBRR0_value & 0xff;
     /*
-     * We need interrupts enabled after configuring USART; that's why we're
-     * annotating the atomic block with ATOMIC_FORCEON.
-     */
-    ATOMIC_BLOCK(ATOMIC_FORCEON)
-    {
-      UBRR0H = UBRR0_value >> 8;
-      UBRR0L = UBRR0_value & 0xff;
-      /*
-       * No interrupts enabled (for now), only transmitter enabled, 8 bit
-       * characters (continued below).
-       */
-      UCSR0B = bit(TXEN0);
-      // Baud rate divider set to 16.
-      bitClear(UCSR0A, U2X0);
-      /*
-       * Asynchronous USART, no parity bit, one stop bit, 8 bit characters.
-       */
-      UCSR0C = bit(UCSZ01) | bit(UCSZ00);
-      //UCSR0C = bit(UPM01) | bit(USBS0) | bit(UCSZ01) | bit(UCSZ00);
-    }
+      * No interrupts enabled (for now), only transmitter enabled, 8 bit
+      * characters (continued below).
+      */
+    UCSR0B = bit(TXEN0);
+    // Baud rate divider set to 16.
+    bitClear(UCSR0A, U2X0);
+    // Asynchronous USART, no parity bit, one stop bit, 8 bit characters.
+    UCSR0C = bit(UCSZ01) | bit(UCSZ00);
   }
   return status;
 }

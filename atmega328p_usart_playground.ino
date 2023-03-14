@@ -53,7 +53,8 @@ int main_without_debug_pin()
   my_adc__init();
   my_timer__init();
   ASSERT_OK(my_usart__init(9600));
-  ASSERT_OK(async_method_2__start(MY_TASK__EMPTY_ARG));
+  interrupts();
+  ASSERT_OK(async_method_2__start());
   bool loop_running;
   /*
    * Keep checking whether any of the following conditions hold true:
