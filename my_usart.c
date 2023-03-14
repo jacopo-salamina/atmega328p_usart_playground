@@ -5,13 +5,13 @@
 #include <Arduino.h>
 
 
-#define RING_BUFFER_MAX_SIZE 64
+#define RING_BUFFER__MAX_SIZE 64
 /**
  * Ring buffer used for storing the serial port's output data.
  */
 static struct
 {
-  volatile char data[RING_BUFFER_MAX_SIZE];
+  volatile char data[RING_BUFFER__MAX_SIZE];
   volatile uint8_t head, size;
 }
 _ring_buffer =
@@ -65,7 +65,7 @@ static return_status _my_usart__write_common_check_size_and_compute_tail(
     ring_buffer_size = _ring_buffer.size;
     ring_buffer_head = _ring_buffer.head;
   }
-  uint8_t ring_buffer_free_space = RING_BUFFER_MAX_SIZE - ring_buffer_size;
+  uint8_t ring_buffer_free_space = RING_BUFFER__MAX_SIZE - ring_buffer_size;
   /*
    * If there's not enough space to accomodate data (according to the ring
    * buffer's internal state we read inside the atomic block), return an error.
@@ -109,9 +109,9 @@ static return_status _my_usart__write_common_check_size_and_compute_tail(
      * to wrap that value around the buffer's maximum size.
      */
     *tail_ptr =
-      ring_buffer_tail_not_wrapped < RING_BUFFER_MAX_SIZE
+      ring_buffer_tail_not_wrapped < RING_BUFFER__MAX_SIZE
       ? ring_buffer_tail_not_wrapped
-      : ring_buffer_tail_not_wrapped - RING_BUFFER_MAX_SIZE;
+      : ring_buffer_tail_not_wrapped - RING_BUFFER__MAX_SIZE;
   }
   return status;
 }
@@ -157,7 +157,7 @@ ISR(USART_UDRE_vect)
    * beyond data's end.
    */
   _ring_buffer.head =
-    ring_buffer_previous_head == RING_BUFFER_MAX_SIZE - 1
+    ring_buffer_previous_head == RING_BUFFER__MAX_SIZE - 1
     ? 0
     : ring_buffer_previous_head + 1;
   /*
@@ -233,13 +233,13 @@ return_status my_usart__write_from_sram(const char * data, uint8_t size)
      * available bytes between the current tail and the end of the array may
      * less than size.
      */
-    if (ring_buffer_tail <= RING_BUFFER_MAX_SIZE - size)
+    if (ring_buffer_tail <= RING_BUFFER__MAX_SIZE - size)
     {
       _memcpy_volatile(&_ring_buffer.data[ring_buffer_tail], data, size);    
     }
     else
     {
-      uint8_t first_batch_size = RING_BUFFER_MAX_SIZE - ring_buffer_tail;
+      uint8_t first_batch_size = RING_BUFFER__MAX_SIZE - ring_buffer_tail;
       _memcpy_volatile(
         &_ring_buffer.data[ring_buffer_tail], data, first_batch_size
       );
@@ -271,7 +271,7 @@ return_status my_usart__write_from_pgm(PGM_P data, uint8_t size)
      * available bytes between the current tail and the end of the array may
      * less than size.
      */
-    if (ring_buffer_tail <= RING_BUFFER_MAX_SIZE - size)
+    if (ring_buffer_tail <= RING_BUFFER__MAX_SIZE - size)
     {
       _memcpy_volatile_from_pgm(
         &_ring_buffer.data[ring_buffer_tail], data, size
@@ -279,7 +279,7 @@ return_status my_usart__write_from_pgm(PGM_P data, uint8_t size)
     }
     else
     {
-      uint8_t first_batch_size = RING_BUFFER_MAX_SIZE - ring_buffer_tail;
+      uint8_t first_batch_size = RING_BUFFER__MAX_SIZE - ring_buffer_tail;
       _memcpy_volatile_from_pgm(
         &_ring_buffer.data[ring_buffer_tail], data, first_batch_size
       );

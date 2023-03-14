@@ -4,14 +4,14 @@
 #include <stdlib.h>
 #include <util/atomic.h>
 
-#define RING_BUFFER_MAX_SIZE 4
+#define RING_BUFFER__MAX_SIZE 4
 
 /**
  * Ring buffer used for storing pending tasks.
  */
 static struct
 {
-  volatile my_task__task_t data[RING_BUFFER_MAX_SIZE];
+  volatile my_task__task_t data[RING_BUFFER__MAX_SIZE];
   volatile uint8_t head, size;
 }
 _ring_buffer =
@@ -39,7 +39,7 @@ return_status my_task__queue_new(my_task__task_t task)
       uint8_t ring_buffer_head = _ring_buffer.head;
       uint8_t ring_buffer_previous_size = _ring_buffer.size;
       // If there's no room for a new task, return an error.
-      if (ring_buffer_previous_size == RING_BUFFER_MAX_SIZE)
+      if (ring_buffer_previous_size == RING_BUFFER__MAX_SIZE)
       {
         status = return_status__my_task__overflow;
       }
@@ -49,8 +49,8 @@ return_status my_task__queue_new(my_task__task_t task)
          * Compute the ring buffer's new tail.
          * 
          * Note that no overflow can occur from this expression: both head and
-         * size cannot exceed 3 (RING_BUFFER_MAX_SIZE - 1), so
-         * ring_buffer_new_tail cannot exceed 7 (2 * RING_BUFFER_MAX_SIZE - 1).
+         * size cannot exceed 3 (RING_BUFFER__MAX_SIZE - 1), so
+         * ring_buffer_new_tail cannot exceed 7 (2 * RING_BUFFER__MAX_SIZE - 1).
          */
         uint8_t ring_buffer_new_tail =
           ring_buffer_head + ring_buffer_previous_size + 1;
@@ -58,14 +58,15 @@ return_status my_task__queue_new(my_task__task_t task)
          * If ring_buffer_new_tail exceeds the ring buffer's max size, adjust
          * its value accordingly.
          * 
-         * Note that subtracting RING_BUFFER_MAX_SIZE once is enough to adjust
+         * Note that subtracting RING_BUFFER__MAX_SIZE once is enough to adjust
          * ring_buffer_new_tail: its initial maximum value was 7
-         * (2 * RING_BUFFER_MAX_SIZE - 1), thus subtracting RING_BUFFER_MAX_SIZE
-         * would lead to a maximum value of 3 (RING_BUFFER_MAX_SIZE - 1).
+         * (2 * RING_BUFFER__MAX_SIZE - 1), thus subtracting
+         * RING_BUFFER__MAX_SIZE would lead to a maximum value of 3
+         * (RING_BUFFER__MAX_SIZE - 1).
          */
-        if (ring_buffer_new_tail >= RING_BUFFER_MAX_SIZE)
+        if (ring_buffer_new_tail >= RING_BUFFER__MAX_SIZE)
         {
-          ring_buffer_new_tail -= RING_BUFFER_MAX_SIZE;
+          ring_buffer_new_tail -= RING_BUFFER__MAX_SIZE;
         }
         // Add the new task to the ring buffer.
         _ring_buffer.data[ring_buffer_new_tail] = task;
@@ -99,8 +100,8 @@ my_task__task_t my_task__try_to_read_next()
     uint8_t ring_buffer_previous_head = _ring_buffer.head;
     /*
      * Once again, this computation will never cause an overflow: both head
-     * and size cannot exceed 3 (RING_BUFFER_MAX_SIZE - 1), so
-     * ring_buffer_new_tail cannot exceed 6 (2 * RING_BUFFER_MAX_SIZE - 2).
+     * and size cannot exceed 3 (RING_BUFFER__MAX_SIZE - 1), so
+     * ring_buffer_new_tail cannot exceed 6 (2 * RING_BUFFER__MAX_SIZE - 2).
      */
     uint8_t ring_buffer_tail =
       ring_buffer_previous_head + ring_buffer_previous_size;
@@ -108,14 +109,14 @@ my_task__task_t my_task__try_to_read_next()
      * If ring_buffer_tail exceeds the ring buffer's max size, adjust its
      * value accordingly.
      * 
-     * Note that subtracting RING_BUFFER_MAX_SIZE once is enough to adjust
+     * Note that subtracting RING_BUFFER__MAX_SIZE once is enough to adjust
      * ring_buffer_tail: its initial maximum value was 6
-     * (2 * RING_BUFFER_MAX_SIZE - 2), thus subtracting RING_BUFFER_MAX_SIZE
-     * would lead to a maximum value of 2 (RING_BUFFER_MAX_SIZE - 1).
+     * (2 * RING_BUFFER__MAX_SIZE - 2), thus subtracting RING_BUFFER__MAX_SIZE
+     * would lead to a maximum value of 2 (RING_BUFFER__MAX_SIZE - 1).
      */
-    if (ring_buffer_tail >= RING_BUFFER_MAX_SIZE)
+    if (ring_buffer_tail >= RING_BUFFER__MAX_SIZE)
     {
-      ring_buffer_tail -= RING_BUFFER_MAX_SIZE;
+      ring_buffer_tail -= RING_BUFFER__MAX_SIZE;
     }
     task = _ring_buffer.data[ring_buffer_tail];
     // Compute the new value for _ring_buffer.head .
@@ -124,9 +125,9 @@ my_task__task_t my_task__try_to_read_next()
      * If ring_buffer_new_head exceeds the ring buffer's max size, adjust its
      * value accordingly.
      */
-    if (ring_buffer_new_head >= RING_BUFFER_MAX_SIZE)
+    if (ring_buffer_new_head >= RING_BUFFER__MAX_SIZE)
     {
-      ring_buffer_new_head -= RING_BUFFER_MAX_SIZE;
+      ring_buffer_new_head -= RING_BUFFER__MAX_SIZE;
     }
     // Update both head and size of the ring buffer.
     _ring_buffer.head = ring_buffer_new_head;
