@@ -5,19 +5,25 @@
 #include <util/atomic.h>
 
 
+/*
+ * Callback which will be invoked with the result of an ADC conversion. If
+ * no conversion is currently running, its value is NULL.
+ * 
+ * This is also used as a "flag" which tells us whether a conversion is running.
+ * In theory, we could rely on the flag ADCS on ADCSRA; however, when this flag
+ * is cleared, the callback might not have been scheduled yet, and thus the ADC
+ * conversion might not be over from a software perspective.
+ */
 static volatile my_task__func_t _conversion_complete_func = NULL;
 
 ISR(ADC_vect)
 {
-  if (NULL != _conversion_complete_func)
-  {
-    my_task__queue_new(
-      (my_task__task_t){
-        .func = _conversion_complete_func, .arg._ushort = ADC
-      }
-    );
-    _conversion_complete_func = NULL;
-  }
+  my_task__queue_new(
+    (my_task__task_t){
+      .func = _conversion_complete_func, .arg._ushort = ADC
+    }
+  );
+  _conversion_complete_func = NULL;
 }
 
 void my_adc__init()
@@ -75,5 +81,9 @@ return_status my_adc__start_conversion(my_task__func_t func)
 
 bool my_adc__is_conversion_active()
 {
+  /*
+   * Keep in mind that we're running inside an outer atomic block, so we can
+   * read a function pointer without any problems.
+   */
   return NULL != _conversion_complete_func;
 }
