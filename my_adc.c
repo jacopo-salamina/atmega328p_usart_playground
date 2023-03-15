@@ -45,9 +45,9 @@ void my_adc__init()
     bit(ADC5D) | bit(ADC4D) | bit(ADC3D) | bit(ADC2D) | bit(ADC1D) | bit(ADC0D);
 }
 
-return_status my_adc__start_conversion(my_task__func_t func)
+return_status_byte_t my_adc__start_conversion(my_task__func_t func)
 {
-  return_status status = return_status__ok;
+  return_status_byte_t status = return_status__ok;
   // A NULL function pointer is not valid.
   if (NULL == func)
   {

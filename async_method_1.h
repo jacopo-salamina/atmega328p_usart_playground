@@ -10,7 +10,7 @@ extern "C"
 /**
  * Start running this method.
  */
-return_status async_method_1__start();
+return_status_byte_t async_method_1__start();
 #ifdef __cplusplus
 }
 #endif

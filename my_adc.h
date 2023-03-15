@@ -17,7 +17,7 @@ void my_adc__init();
  * Starts an ADC conversion, which, when completed, will trigger the specified
  * callback with the conversion result.
  */
-return_status my_adc__start_conversion(my_task__func_t);
+return_status_byte_t my_adc__start_conversion(my_task__func_t);
 
 /**
  * Checks whether there's an ongoing ADC conversion.

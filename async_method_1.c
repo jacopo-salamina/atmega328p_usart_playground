@@ -8,14 +8,14 @@
 
 static uint8_t _seconds_before_scheduling_task_2 = 10;
 
-static return_status _async_method_1__task_2(my_task__arg_t _bogus_arg)
+static return_status_byte_t _async_method_1__task_2(my_task__arg_t _bogus_arg)
 {
   return MY_USART__WRITE_CONST_F("EOF\nwe're done\n");
 }
 
-static return_status _async_method_1__task_1(my_task__arg_t _bogus_arg)
+static return_status_byte_t _async_method_1__task_1(my_task__arg_t _bogus_arg)
 {
-  return_status status = return_status__ok;
+  return_status_byte_t status = return_status__ok;
   /**
    * If the initial number of idle seconds hasn't passed yet, decrease the
    * number, then reschedule this task one second later.
@@ -34,9 +34,9 @@ static return_status _async_method_1__task_1(my_task__arg_t _bogus_arg)
   return status;
 }
 
-return_status async_method_1__start()
+return_status_byte_t async_method_1__start()
 {
-  return_status status = MY_USART__WRITE_CONST_F("wait for it\n\n");
+  return_status_byte_t status = MY_USART__WRITE_CONST_F("wait for it\n\n");
   if (return_status__ok == status)
   {
     status = _async_method_1__task_1(MY_TASK__EMPTY_ARG);

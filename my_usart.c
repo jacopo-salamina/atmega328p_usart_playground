@@ -49,11 +49,11 @@ static void _memcpy_volatile_from_pgm(
   }
 }
 
-static return_status _my_usart__write_common_check_size_and_compute_tail(
+static return_status_byte_t _my_usart__write_common_check_size_and_compute_tail(
   uint8_t size, uint8_t * tail_ptr
 )
 {
-  return_status status = return_status__ok;
+  return_status_byte_t status = return_status__ok;
   uint8_t ring_buffer_size;
   uint8_t ring_buffer_head;
   /*
@@ -180,9 +180,9 @@ ISR(USART_UDRE_vect)
   }
 }
 
-return_status my_usart__init(uint16_t baud_rate)
+return_status_byte_t my_usart__init(uint16_t baud_rate)
 {
-  return_status status = return_status__ok;
+  return_status_byte_t status = return_status__ok;
   // Keep in mind that we're going to set the baud rate divider to 16.
   uint16_t UBRR0_value = F_CPU / (16L * baud_rate) - 1;
   /*
@@ -211,7 +211,7 @@ return_status my_usart__init(uint16_t baud_rate)
   return status;
 }
 
-return_status my_usart__write_from_sram(const char * data, uint8_t size)
+return_status_byte_t my_usart__write_from_sram(const char * data, uint8_t size)
 {
   // Edge case where there's no data to write; we don't need to do anything.
   if (size == 0)
@@ -219,9 +219,10 @@ return_status my_usart__write_from_sram(const char * data, uint8_t size)
     return return_status__ok;
   }
   uint8_t ring_buffer_tail;
-  return_status status = _my_usart__write_common_check_size_and_compute_tail(
-    size, &ring_buffer_tail
-  );
+  return_status_byte_t status =
+    _my_usart__write_common_check_size_and_compute_tail(
+      size, &ring_buffer_tail
+    );
   if (return_status__ok == status)
   {
     /*
@@ -248,9 +249,9 @@ return_status my_usart__write_from_sram(const char * data, uint8_t size)
   return status;
 }
 
-return_status my_usart__write_from_pgm(PGM_P data, uint8_t size)
+return_status_byte_t my_usart__write_from_pgm(PGM_P data, uint8_t size)
 {
-  return_status status = return_status__ok;
+  return_status_byte_t status = return_status__ok;
   // Edge case where there's no data to write; we don't need to do anything.
   if (size == 0)
   {

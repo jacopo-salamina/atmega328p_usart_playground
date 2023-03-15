@@ -33,9 +33,9 @@ static void _print_hex_3_digits(char * dest, uint16_t n)
   dest[2] = _byte_to_hex(n & 0xf);
 }
 
-static return_status _async_method_2__adc_callback(my_task__arg_t arg)
+static return_status_byte_t _async_method_2__adc_callback(my_task__arg_t arg)
 {
-  return_status status = return_status__ok;
+  return_status_byte_t status = return_status__ok;
   if (0 == _adc_stats.count)
   {
     _adc_stats.min = arg._ushort;
@@ -88,9 +88,10 @@ static return_status _async_method_2__adc_callback(my_task__arg_t arg)
   return status;
 }
 
-return_status _async_method_2__main_task(my_task__arg_t _bogus_arg)
+return_status_byte_t _async_method_2__main_task(my_task__arg_t _bogus_arg)
 {
-  return_status status = my_timer__set_timeout(25, _async_method_2__main_task);
+  return_status_byte_t status =
+    my_timer__set_timeout(25, _async_method_2__main_task);
   if (return_status__ok == status)
   {
     status = my_adc__start_conversion(_async_method_2__adc_callback);
@@ -98,7 +99,7 @@ return_status _async_method_2__main_task(my_task__arg_t _bogus_arg)
   return status;
 }
 
-return_status async_method_2__start()
+return_status_byte_t async_method_2__start()
 {
   return _async_method_2__main_task(MY_TASK__EMPTY_ARG);
 }

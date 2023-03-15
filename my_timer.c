@@ -60,9 +60,11 @@ void my_timer__init()
   OCR1A = 0;
 }
 
-return_status my_timer__set_timeout(uint16_t delay_in_ms, my_task__func_t func)
+return_status_byte_t my_timer__set_timeout(
+  uint16_t delay_in_ms, my_task__func_t func
+)
 {
-  return_status status = return_status__ok;
+  return_status_byte_t status = return_status__ok;
   /*
    * The timer's internal counter wraps back to 0 approximately every 4194.3 ms.
    * If we tried to generate a 4195 ms (or longer) delay, we would need to

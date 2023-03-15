@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 
 typedef enum
 {
@@ -19,4 +21,6 @@ typedef enum
   return_status__my_adc__bad_parameter,
   return_status__my_adc__other,
 }
-return_status;
+return_status_t;
+
+typedef uint8_t return_status_byte_t;

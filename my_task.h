@@ -13,7 +13,7 @@ typedef union
 }
 my_task__arg_t;
 
-typedef return_status (* my_task__func_t)(my_task__arg_t);
+typedef return_status_byte_t (* my_task__func_t)(my_task__arg_t);
 
 typedef struct
 {
@@ -31,7 +31,7 @@ extern "C"
 /**
  * Queue a new task instance (if there's enough available space).
  */
-return_status my_task__queue_new(my_task__task_t);
+return_status_byte_t my_task__queue_new(my_task__task_t);
 
 /**
  * Attempt to retrieve the next available task. If no task is found, instead
