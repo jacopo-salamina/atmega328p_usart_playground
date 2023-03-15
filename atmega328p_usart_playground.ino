@@ -20,9 +20,10 @@
 #define ASSERT_OK(expr) \
 do \
 { \
-  if (return_status__ok != expr) \
+  return_status_byte_t status = expr; \
+  if (return_status__ok != status) \
   { \
-    return 1; \
+    return status; \
   } \
 } \
 while (0)
@@ -38,17 +39,17 @@ int main()
   // Turn off the LED on the debug pin.
   bitClear(PORTB, PORTB5);
   // If something goes wrong, turn on the LED on the debug pin.
-  if (main_without_debug_pin())
+  if (return_status__ok != main_without_debug_pin())
   {
     bitSet(PORTB, PORTB5);
   }
 }
 
 /**
- * Actual main function, which returns 0 unless a function returns an error
- * status.
+ * Actual main function, which returns return_status__ok unless a function
+ * returns an error status.
  */
-int main_without_debug_pin()
+return_status_byte_t main_without_debug_pin()
 {
   my_adc__init();
   my_timer__init();
@@ -88,5 +89,5 @@ int main_without_debug_pin()
     }
   }
   while (loop_running);
-  return 0;
+  return return_status__ok;
 }
